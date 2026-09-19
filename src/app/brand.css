@@ -1,0 +1,71 @@
+/* DeskHop v1.2: light appearance for the initial application.
+   Scope tokens to the application root. Font files are not bundled. */
+.deskhop {
+  color-scheme: light;
+  --dh-canvas: #f7f4ed;
+  --dh-surface: #ffffff;
+  --dh-ink: #24342d;
+  --dh-muted: #5f6b63;
+  --dh-primary: #285547;
+  --dh-on-primary: #ffffff;
+  --dh-sage: #e5ede5;
+  --dh-on-sage: #285547;
+  --dh-apricot: #e8b06c;
+  --dh-on-apricot: #24342d;
+  --dh-travel: #fff0d7;
+  --dh-on-travel: #704415;
+  --dh-border: #d9ded5;
+  --dh-control-border: #78877d;
+  --dh-danger: #ad3e36;
+  --dh-danger-surface: #fceae7;
+  --dh-focus: #285547;
+  --dh-font:
+    "Manrope", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --dh-text-body: 1rem;
+  --dh-leading-body: 1.5;
+  --dh-text-secondary: 0.875rem;
+  --dh-text-caption: 0.75rem;
+  --dh-space-1: 0.25rem;
+  --dh-space-2: 0.5rem;
+  --dh-space-3: 0.75rem;
+  --dh-space-4: 1rem;
+  --dh-space-6: 1.5rem;
+  --dh-space-8: 2rem;
+  --dh-space-12: 3rem;
+  --dh-radius-input: 0.625rem;
+  --dh-radius-card: 1rem;
+  --dh-radius-sheet: 1.25rem;
+  --dh-radius-status: 0.5rem;
+  --dh-touch-target: 2.75rem;
+  --dh-primary-height: 3rem;
+  --dh-content-max: 72.5rem;
+  --dh-motion-fast: 120ms;
+  --dh-motion-default: 180ms;
+  --dh-ease: cubic-bezier(0.2, 0, 0, 1);
+  font-family: var(--dh-font);
+  font-size: var(--dh-text-body);
+  line-height: var(--dh-leading-body);
+  color: var(--dh-ink);
+  background: var(--dh-canvas);
+}
+
+/* Keep a visible outline; do not substitute a faint shadow. */
+.deskhop :focus-visible {
+  outline: 3px solid var(--dh-focus);
+  outline-offset: 3px;
+}
+
+/* Use the same family in native controls; keep editable fields at 16px. */
+.deskhop :where(button, input, select, textarea) {
+  font: inherit;
+}
+.deskhop :where(input, select, textarea) {
+  font-size: 1rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .deskhop {
+    --dh-motion-fast: 0ms;
+    --dh-motion-default: 0ms;
+  }
+}

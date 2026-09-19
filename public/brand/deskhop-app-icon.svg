@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" fill="none" role="img" aria-labelledby="title desc">
+  <title id="title">DeskHop app icon</title>
+  <desc id="desc">A cream desk and hop arc with an apricot dot on a forest-green rounded square.</desc>
+  <rect width="96" height="96" rx="22" fill="#285547"/>
+  <g transform="translate(16 16)">
+    <g stroke="#F7F4ED" stroke-width="5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 36H52M18 36V54M46 36V54"/>
+      <path d="M20 24C23 9 37 9 42 17"/>
+    </g>
+    <circle cx="46" cy="24" r="4" fill="#E8B06C"/>
+  </g>
+</svg>

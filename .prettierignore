@@ -1,0 +1,8 @@
+node_modules
+.next*
+data
+test-results
+playwright-report
+docs/brand
+public/illustrations
+package-lock.json

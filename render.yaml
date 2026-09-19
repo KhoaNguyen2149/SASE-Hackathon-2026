@@ -1,0 +1,30 @@
+# This plan incurs charges. Do not deploy until the owner approves the current price.
+services:
+  - type: web
+    name: deskhop
+    runtime: docker
+    plan: starter
+    region: oregon
+    healthCheckPath: /api/health
+    autoDeployTrigger: off
+    disk:
+      name: deskhop-data
+      mountPath: /app/data
+      sizeGB: 1
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_PATH
+        value: /app/data/deskhop.sqlite
+      - key: SEED_DEMO
+        value: "true"
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_PORT
+        value: "587"
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASS
+        sync: false
+      - key: SMTP_FROM
+        sync: false
