@@ -43,9 +43,9 @@ export function Friends() {
   return (
     <>
       <PageTitle
-        eyebrow="BETTER, TOGETHER"
-        title="A familiar face makes a good day."
-        description="A little company when you want it. Your own space when you don’t."
+        eyebrow="FRIENDS"
+        title="Study with people you know."
+        description="Share where you’re studying when you want company. Stay private when you don’t."
       />
       <AuthGate>
         <FriendContent />
@@ -101,7 +101,7 @@ function FriendContent() {
       <div className="availability-card">
         <Avatar name={app!.user!.name} />
         <div>
-          <span className="eyebrow">YOUR LITTLE SIGNAL</span>
+          <span className="eyebrow">YOUR AVAILABILITY</span>
           <h3>{label}</h3>
           <p>
             {ownMode
@@ -144,7 +144,7 @@ function FriendContent() {
       {incoming.length > 0 && (
         <section className="list-section">
           <h2>
-            A little hello{" "}
+            Friend requests{" "}
             <span className="count-badge">{incoming.length}</span>
           </h2>
           {incoming.map((r) => (
@@ -163,7 +163,7 @@ function FriendContent() {
                   void mutate(
                     "friends",
                     { action: "accept", target: r.id },
-                    "A new friend, a little closer.",
+                    "Friend request accepted.",
                   )
                 }
               >
@@ -275,8 +275,8 @@ function FriendContent() {
                   {f.status === "Available now"
                     ? "They’re open to an invitation, without a shared destination."
                     : f.status === "No shared status"
-                      ? "Their time, their choice."
-                      : "A little space to do their thing."}
+                      ? "They’re not sharing a status."
+                      : "They’re busy right now."}
                 </p>
               )}
             </article>
@@ -362,7 +362,7 @@ function FriendContent() {
         </p>
       </div>
       {add && (
-        <Modal title="Say a little hello" onClose={() => setAdd(false)}>
+        <Modal title="Add a friend" onClose={() => setAdd(false)}>
           <p className="muted">
             Find a friend with their exact DeskHop handle. Yours is{" "}
             <strong>@{app?.user?.handle}</strong>.
@@ -404,10 +404,7 @@ function FriendContent() {
         </Modal>
       )}
       {status && (
-        <Modal
-          title="What’s your little signal?"
-          onClose={() => setStatus(false)}
-        >
+        <Modal title="Set your availability" onClose={() => setStatus(false)}>
           <p className="muted">
             Only accepted friends see this. It expires automatically.
           </p>
@@ -423,7 +420,7 @@ function FriendContent() {
                 Available now · open to an invitation
               </option>
               <option value="open_to_join">Studying and open to company</option>
-              <option value="busy">Busy · a little occupied</option>
+              <option value="busy">Busy · heads down</option>
               <option value="dnd">Do not disturb · quiet time</option>
               <option value="">Not sharing availability</option>
             </select>
@@ -480,7 +477,7 @@ function FriendContent() {
       )}
       {hop && (
         <Modal
-          title={`A little company for ${hop.name}`}
+          title={`Let ${hop.name} know you’re coming`}
           onClose={() => setHop(null)}
         >
           <Badge tone="sage">They’re open to company</Badge>

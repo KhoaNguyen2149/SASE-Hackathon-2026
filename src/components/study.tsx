@@ -24,8 +24,8 @@ export function Study() {
     <>
       <PageTitle
         eyebrow="ONE THING AT A TIME"
-        title="A little focus goes a long way."
-        description="Settle in. Set an intention. Give yourself a little space to make progress."
+        title="Start a study timer."
+        description="Pick a spot, choose how long you want to go, and start the clock."
       />
       <AuthGate>
         <StudyContent />
@@ -87,20 +87,20 @@ function StudyContent() {
             <Leaf size={21} />
           </span>
           <span className="eyebrow">
-            {s ? "YOUR TIME, WELL SPENT" : "A SMALL START IS STILL A START"}
+            {s ? "SESSION IN PROGRESS" : "NOTHING RUNNING YET"}
           </span>
         </div>
         {s ? (
           <>
             <h2>
               {atTarget
-                ? "Look at that. A little progress."
+                ? "Goal reached."
                 : s.state === "paused"
-                  ? "Take a breath."
-                  : "You’re right where you need to be."}
+                  ? "Paused."
+                  : "Timer’s running."}
             </h2>
             <p className="muted">
-              {s.spot_name || "Your own little corner"}
+              {s.spot_name || "No spot selected"}
               {s.state === "paused" ? " · On a break" : ""}
             </p>
             <div
@@ -124,8 +124,8 @@ function StudyContent() {
                   {atTarget
                     ? "goal reached · confirm when finished"
                     : s.state === "paused"
-                      ? "a moment to recharge"
-                      : "a little less distraction"}
+                      ? "paused"
+                      : "stay with it"}
                 </span>
               </div>
             </div>
@@ -320,7 +320,7 @@ function StudyContent() {
                       visibility,
                       share_completion: shareCompletion,
                     },
-                    "Your little focus session has begun.",
+                    "Timer started.",
                   )
                 }
               >
@@ -337,7 +337,7 @@ function StudyContent() {
       </section>
       <aside className="study-aside">
         <div className="card padded">
-          <span className="eyebrow">LITTLE THINGS ADD UP</span>
+          <span className="eyebrow">YOUR TOTALS</span>
           <h3>Your focus, so far</h3>
           <div className="study-stats">
             <div>
@@ -356,15 +356,15 @@ function StudyContent() {
         </div>
         <div className="focus-tip">
           <Coffee size={26} />
-          <h3>Room for a little reset.</h3>
+          <h3>Take a real break.</h3>
           <p>
             Put your phone out of reach. Take a sip of water. Start with just
             one thing.
           </p>
-          <span>YOU’VE GOT TIME FOR A SMALL START.</span>
+          <span>BACK IN FIVE.</span>
         </div>
         <div className="recent-sessions">
-          <h3>Your recent little wins</h3>
+          <h3>Recent sessions</h3>
           {completedSessions.length ? (
             completedSessions.slice(0, 5).map((h) => (
               <div className="history-item" key={h.id}>
@@ -418,10 +418,7 @@ function StudyContent() {
         </Modal>
       )}
       {completed && (
-        <Modal
-          title="A little progress. A good feeling."
-          onClose={() => setCompleted(null)}
-        >
+        <Modal title="Session complete." onClose={() => setCompleted(null)}>
           <div className="success-art">
             <CheckCircle2 size={48} />
           </div>

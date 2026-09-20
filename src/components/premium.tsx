@@ -12,11 +12,11 @@ export function Premium() {
   }
   return (
     <div className="premium-page">
-      <p className="eyebrow">A LITTLE EXTRA, WHEN YOU WANT IT</p>
+      <p className="eyebrow">DESKHOP PREMIUM</p>
       <h1>
-        Your focus.
+        Everything you use now,
         <br />
-        With a little more possibility.
+        plus a few extras.
       </h1>
       <p className="muted">
         Discovery, maps, reviews, study sessions, friends, and earned

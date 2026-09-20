@@ -28,9 +28,9 @@ export function Profile() {
   return (
     <>
       <PageTitle
-        eyebrow="YOUR OWN LITTLE CORNER"
-        title="Make DeskHop feel like you."
-        description="Your preferences, your privacy, your pace."
+        eyebrow="YOUR ACCOUNT"
+        title="Your profile and settings."
+        description="Update your details, sharing, and account."
       />
       <div className="button-row">
         <Link className="button secondary" href="/rankings">
@@ -239,7 +239,7 @@ function ProfileContent() {
         {data?.spotifyEnabled && <SpotifyCard />}
         {user.verified === 1 && <DecorationEditor />}
         <section className="card padded">
-          <h2>A little control over your privacy</h2>
+          <h2>Privacy</h2>
           <label className="check-card">
             <input
               type="checkbox"

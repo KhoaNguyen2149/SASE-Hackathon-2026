@@ -262,24 +262,24 @@ export function Discover({ saved = false }: { saved?: boolean }) {
     <>
       {saved ? (
         <PageTitle
-          eyebrow="YOUR PERSONAL SHORTLIST"
-          title="Good spots, kept close."
-          description="A place for the places you want to come back to."
+          eyebrow="SAVED SPOTS"
+          title="Spots you’ve saved."
+          description="Everything you’ve bookmarked, in one list."
         />
       ) : (
         <section className="discover-hero">
           <div className="hero-copy">
             <div className="hero-eyebrow">
-              <span className="status-dot" /> A LITTLE FOCUS STARTS HERE
+              <span className="status-dot" /> COLORADO STUDY SPOTS
             </div>
             <h1>
               Find your place.
               <br />
-              <span>Make a little progress.</span>
+              <span>Get your work done.</span>
             </h1>
             <p>
-              A quiet corner, a coffee-fueled afternoon, or a table for your
-              whole crew. Your next study spot is closer than you think.
+              A quiet corner, a café with outlets, or a table big enough for the
+              whole group. Search by what you actually need.
             </p>
             <div className="hero-location">
               <MapPinIcon />
@@ -340,7 +340,7 @@ export function Discover({ saved = false }: { saved?: boolean }) {
             }}
           >
             <BookOpen size={17} />
-            Solo focus<span>A little peace & quiet</span>
+            Solo focus<span>Quiet, with outlets</span>
           </button>
           <button
             className={`intent ${filters.group > 1 ? "selected" : ""}`}
@@ -405,7 +405,7 @@ export function Discover({ saved = false }: { saved?: boolean }) {
           <Search size={20} />
           <input
             aria-label="Search study spots"
-            placeholder="A spot, a neighborhood, a little inspiration…"
+            placeholder="Search by name, city, or neighborhood…"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
           />
@@ -495,13 +495,13 @@ export function Discover({ saved = false }: { saved?: boolean }) {
       <div className="results-heading">
         <div>
           <h2>
-            {saved ? "Your saved spots" : "Somewhere that feels just right"}
+            {saved ? "Your saved spots" : "Matching spots"}
             <span>{spots.length}</span>
           </h2>
           <p>
             {location
               ? `Within ${radius} km of your location`
-              : "Thoughtful spaces for whatever you’re working on."}
+              : "Places to work across Colorado."}
           </p>
         </div>
         <div className="result-controls">
@@ -557,14 +557,14 @@ export function Discover({ saved = false }: { saved?: boolean }) {
       ) : saved && !app?.user ? (
         <Empty
           icon={<Heart />}
-          title="Keep your favorite places close"
+          title="Save spots to find them later"
           action={
             <Link className="button" href="/login?next=/saved">
               Sign in to save spots
             </Link>
           }
         >
-          Your personal shortlist will be ready whenever you are.
+          Sign in and the spots you save will show up here.
         </Empty>
       ) : spots.length === 0 ? (
         <Empty
@@ -572,8 +572,8 @@ export function Discover({ saved = false }: { saved?: boolean }) {
             friendsOnly && friendsHere.length === 0
               ? "No friends are sharing a venue yet"
               : saved
-                ? "Your next favorite is out there"
-                : "Let’s open up the possibilities"
+                ? "Nothing saved yet"
+                : "No spots match those filters"
           }
           action={
             <div className="button-row">
@@ -692,11 +692,8 @@ export function Discover({ saved = false }: { saved?: boolean }) {
         </div>
       )}
       {showFilters && (
-        <Modal
-          title="Find your kind of place"
-          onClose={() => setShowFilters(false)}
-        >
-          <p className="muted">A few preferences make all the difference.</p>
+        <Modal title="Filters" onClose={() => setShowFilters(false)}>
+          <p className="muted">Narrow the list down to what you need.</p>
           <div className="filter-options">
             {[
               [
@@ -709,7 +706,7 @@ export function Discover({ saved = false }: { saved?: boolean }) {
                 "Somewhere to plug in",
                 "Only spots with known outlets.",
               ],
-              ["coffee", "Coffee on site", "A little fuel for your focus."],
+              ["coffee", "Coffee on site", "Coffee served at the venue."],
               [
                 "open",
                 "Open for my entire visit",
@@ -778,12 +775,9 @@ export function Discover({ saved = false }: { saved?: boolean }) {
         </Modal>
       )}
       {smart && (
-        <Modal
-          title="What would feel just right?"
-          onClose={() => setSmart(false)}
-        >
+        <Modal title="Describe what you need" onClose={() => setSmart(false)}>
           <p className="muted">
-            Tell us a few preferences. This free helper turns supported keywords
+            Type what you are after. This free helper turns supported keywords
             into filters.
           </p>
           <label className="field">

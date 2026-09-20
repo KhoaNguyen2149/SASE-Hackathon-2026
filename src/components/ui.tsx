@@ -67,7 +67,7 @@ export function Empty({
 export function Loading() {
   return (
     <div className="loading" role="status">
-      <LoaderCircle className="spin" size={22} /> Finding your place…
+      <LoaderCircle className="spin" size={22} /> Loading…
     </div>
   );
 }
@@ -93,7 +93,7 @@ export function AuthGate({ children }: { children: ReactNode }) {
     <>{children}</>
   ) : (
     <Empty
-      title="A little more personal"
+      title="Sign in to continue"
       action={
         <button className="button" onClick={requireAuth}>
           Sign in to DeskHop <ArrowRight size={17} />

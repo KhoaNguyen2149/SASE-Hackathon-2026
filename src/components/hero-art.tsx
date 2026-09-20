@@ -63,7 +63,7 @@ export function HeroArt() {
         />
       </svg>
       <div className="art-note">
-        <span>✦</span> a good day to make a little progress
+        <span>✦</span> good day to get some work done
       </div>
     </div>
   );

@@ -13,7 +13,11 @@ import { post } from "@/lib/client";
 import { useApp } from "./provider";
 import { HeroArt } from "./hero-art";
 type Mode =
-  "login" | "register" | "forgot-password" | "reset-password" | "verify";
+  | "login"
+  | "register"
+  | "forgot-password"
+  | "reset-password"
+  | "verify";
 export function Auth({ mode }: { mode: Mode }) {
   const { refresh, data: app } = useApp();
   const router = useRouter(),
@@ -24,11 +28,11 @@ export function Auth({ mode }: { mode: Mode }) {
     [developmentLink, setDevelopmentLink] = useState(""),
     [showPassword, setShowPassword] = useState(false);
   const titles = {
-    login: "Your little study world awaits.",
-    register: "Make yourself at home.",
+    login: "Welcome back.",
+    register: "Create your account.",
     "forgot-password": "Let’s get you back in.",
-    "reset-password": "A fresh start for your password.",
-    verify: "One little step. Then you’re in.",
+    "reset-password": "Set a new password.",
+    verify: "Confirm your email.",
   };
   async function submit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -143,30 +147,31 @@ export function Auth({ mode }: { mode: Mode }) {
   return (
     <div className="auth-layout">
       <div className="auth-story">
-        <p className="eyebrow">A GOOD PLACE TO BEGIN</p>
+        <p className="eyebrow">WELCOME TO DESKHOP</p>
         <h1>
-          A place for focus.
-          <br />A little room for you.
+          Find somewhere
+          <br />
+          to get work done.
         </h1>
         <p>
-          Find your people. Find your corner.
+          Browse spots near you, reserve a room when you need one,
           <br />
-          Make progress, one little session at a time.
+          and keep track of the hours you put in.
         </p>
         <HeroArt />
-        <p className="auth-quote">“A small start is still a start.”</p>
+        <p className="auth-quote">“The best spot is the one that’s open.”</p>
       </div>
       <section className="auth-card card">
         <img src="/brand/deskhop-mark.svg" width="48" height="48" alt="" />
         <h2>{titles[mode]}</h2>
         <p className="muted">
           {mode === "login"
-            ? "Good to have you here. Sign in to pick up where you left off."
+            ? "Sign in to pick up where you left off."
             : mode === "register"
-              ? "Your next favorite spot is waiting."
+              ? "It takes about a minute."
               : mode === "verify"
                 ? "Confirm your email to complete your account."
-                : "We all need a little reset sometimes."}
+                : "We’ll email you a link to reset it."}
         </p>
         {["login", "register"].includes(mode) && (
           <div className="auth-alternatives">
@@ -344,13 +349,12 @@ export function Auth({ mode }: { mode: Mode }) {
                   : "")
               }
             >
-              Make yourself at home
+              Create an account
             </Link>
           </p>
         ) : mode === "register" ? (
           <p className="auth-switch">
-            Already have a little corner here?{" "}
-            <Link href="/login">Sign in</Link>
+            Already have an account? <Link href="/login">Sign in</Link>
           </p>
         ) : (
           <p className="auth-switch">

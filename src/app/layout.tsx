@@ -13,7 +13,7 @@ export const metadata: Metadata = {
     template: "%s · DeskHop",
   },
   description:
-    "Find a place that fits your study session. Discover spots, reserve supported rooms, and make a little progress with friends.",
+    "Find a place that fits your study session. Browse spots across Colorado, reserve a room where we support it, and study alongside friends.",
   applicationName: "DeskHop",
   manifest: "/manifest.webmanifest",
   icons: { icon: "/brand/deskhop-app-icon.svg", apple: "/icon-192.png" },

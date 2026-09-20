@@ -12,8 +12,8 @@ export function Feed() {
   return (
     <>
       <PageTitle
-        eyebrow="A LITTLE LOCAL KNOWLEDGE"
-        title="Good words. Good places."
+        eyebrow="FROM PEOPLE YOU FOLLOW"
+        title="Recent reviews."
         description="Recent public reviews from people you follow."
       />
       <AuthGate>
@@ -31,7 +31,7 @@ function FeedContent() {
   ) : (
     <Empty
       icon={<BookOpen />}
-      title="A fresh page for your feed"
+      title="Nothing here yet"
       action={
         <Link className="button" href="/discover">
           Explore spots and reviews
@@ -195,7 +195,7 @@ export function PublicProfile({ handle }: { handle: string }) {
           }))}
         />
       ) : (
-        <Empty title="A little room for a first review">
+        <Empty title="No reviews yet">
           There are no public reviews here yet.
         </Empty>
       )}

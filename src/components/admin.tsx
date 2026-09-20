@@ -63,7 +63,7 @@ export function Admin() {
   return (
     <>
       <PageTitle
-        eyebrow="TAKE CARE OF THE LITTLE DETAILS"
+        eyebrow="ADMINISTRATION"
         title="Venue & community administration."
         description="Keep facts current, inventory authorized, and the community welcoming."
       />
@@ -88,7 +88,7 @@ function AdminContent() {
     [closure, setClosure] = useState(false);
   if (app?.user?.role !== "admin")
     return (
-      <Empty icon={<Shield />} title="A little behind the scenes">
+      <Empty icon={<Shield />} title="Admins only">
         This page is reserved for authorized DeskHop administrators.
       </Empty>
     );

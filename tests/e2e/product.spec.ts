@@ -72,7 +72,7 @@ test("guest can filter spots, search, use keyboard dialog, and recover from no m
     .getByRole("textbox", { name: "Search study spots" })
     .fill("No such study venue");
   await expect(
-    page.getByRole("heading", { name: "Let’s open up the possibilities" }),
+    page.getByRole("heading", { name: "No spots match those filters" }),
   ).toBeVisible();
   await page.getByRole("button", { name: "Reset search" }).click();
   await expect(
@@ -152,7 +152,7 @@ test("save, reserve, refresh, pause/resume, finish, review, and cancel a room", 
     .getByRole("button", { name: "Confirm reservation", exact: true })
     .click();
   await expect(
-    page.getByRole("heading", { name: "Your little corner is confirmed." }),
+    page.getByRole("heading", { name: "Reservation confirmed." }),
   ).toBeVisible();
   await page.getByRole("link", { name: "Go to My bookings" }).click();
   await expect(page).toHaveURL(/bookings/);
@@ -174,7 +174,7 @@ test("save, reserve, refresh, pause/resume, finish, review, and cancel a room", 
   await page.getByRole("button", { name: "Resume", exact: true }).click();
   await page.getByRole("button", { name: "Finish session" }).click();
   await expect(
-    page.getByRole("heading", { name: "A little progress. A good feeling." }),
+    page.getByRole("heading", { name: "Session complete." }),
   ).toBeVisible();
   await page
     .getByRole("link", { name: "Share a thought about your spot" })
@@ -504,7 +504,7 @@ test("every destination is reachable from the mobile menu, and reset only appear
   await expect(page.getByRole("link", { name: "Explore spots" })).toBeVisible();
   await page.goto("/discover?catalog=sample");
   await page
-    .getByPlaceholder("A spot, a neighborhood")
+    .getByPlaceholder("Search by name, city, or neighborhood")
     .fill("no-such-venue-anywhere");
   await expect(
     page.getByRole("button", { name: "Reset search" }),

@@ -4,13 +4,13 @@ export function InfoPage({ page }: { page: "about" | "privacy" | "terms" }) {
   return (
     <>
       <PageTitle
-        eyebrow="A LITTLE CLARITY"
+        eyebrow="THE DETAILS"
         title={
           page === "about"
-            ? "Built around your next little breakthrough."
+            ? "What DeskHop does."
             : page === "privacy"
-              ? "Your time. Your space. Your privacy."
-              : "A few ground rules for a good community."
+              ? "How your data is handled."
+              : "The ground rules."
         }
       />
       <article className="prose">
@@ -18,14 +18,13 @@ export function InfoPage({ page }: { page: "about" | "privacy" | "terms" }) {
           <>
             <h2>Find a place that fits this study session.</h2>
             <p>
-              DeskHop brings thoughtful spot discovery, supported room
-              reservations, a quiet study timer, and consent-based friend
-              activity together. The goal is simple: less searching, a little
-              more progress.
+              DeskHop puts spot discovery, room reservations, a study timer, and
+              opt-in friend activity in one place, so you spend less time
+              hunting for somewhere to sit.
             </p>
-            <h2>What you’re exploring</h2>
+            <h2>What you’re looking at</h2>
             <p>
-              Discovery covers Colorado through OpenStreetMap and curated venue
+              Discovery covers Colorado through OpenStreetMap and vetted venue
               sources, plus a separate fictional sample campus. Real venue
               entries identify their sources and unknown facts. The sample
               campus has fictional names, amenities, hours, room inventory, and
@@ -41,7 +40,7 @@ export function InfoPage({ page }: { page: "about" | "privacy" | "terms" }) {
               verified information and add inventory they are authorized to
               manage.
             </p>
-            <h2>A few things we keep separate</h2>
+            <h2>What each action actually means</h2>
             <ul>
               <li>
                 A reserved room is a booking. A timer is a personal study
@@ -57,7 +56,7 @@ export function InfoPage({ page }: { page: "about" | "privacy" | "terms" }) {
                 private sharing you explicitly choose.
               </li>
             </ul>
-            <h2>Free to explore</h2>
+            <h2>What costs money</h2>
             <p>
               This build has no paid plan, checkout, subscription, or
               advertising. The search helper uses supported keywords to set
@@ -153,7 +152,7 @@ export function InfoPage({ page }: { page: "about" | "privacy" | "terms" }) {
               contact information, and reviewed terms appropriate to their
               deployment.
             </p>
-            <h2>Use the community thoughtfully</h2>
+            <h2>Be decent to each other</h2>
             <p>
               Use your own account, share honest observations, and respect other
               people’s privacy. Don’t post harassment, spam, private personal
@@ -176,14 +175,14 @@ export function InfoPage({ page }: { page: "about" | "privacy" | "terms" }) {
               bookings and four hours per day. Cancel before the start at no
               charge.
             </p>
-            <h2>Give uncertainty its space</h2>
+            <h2>What we don’t guarantee</h2>
             <p>
               Community reports are observations, not guaranteed seat
               availability. Opening hours and access can change. Unknown facts
               stay unknown. Do not use a timer or a hop as proof of attendance,
               a reservation, or permission to access restricted facilities.
             </p>
-            <h2>Sharing stays optional</h2>
+            <h2>Sharing is opt-in</h2>
             <p>
               Friendship does not give permission to visit a private session. A
               hop requires a currently shared spot and explicit openness to

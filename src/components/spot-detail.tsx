@@ -122,8 +122,8 @@ export function SpotDetail({
       <div className="detail-layout">
         <div className="detail-main">
           <section className="detail-section">
-            <p className="eyebrow">MAKE YOURSELF AT HOME</p>
-            <h2>A little room for your next big idea.</h2>
+            <p className="eyebrow">ABOUT THIS SPOT</p>
+            <h2>What it’s like here.</h2>
             <p className="description-large">{spot.description}</p>
             <div className="fact-grid">
               <div>
@@ -293,10 +293,7 @@ export function SpotDetail({
                         {review.rating}
                       </span>
                     </div>
-                    <p>
-                      {review.notes ||
-                        "A little feedback, shared through ratings."}
-                    </p>
+                    <p>{review.notes || "Rated, with no written notes."}</p>
                     <div className="review-meta">
                       <span>
                         {noiseLabels[review.noise - 1]} ·{" "}
@@ -357,11 +354,8 @@ export function SpotDetail({
                 ))}
               </div>
             ) : (
-              <Empty
-                icon={<Pencil size={25} />}
-                title="Be the first to leave a little insight"
-              >
-                A thoughtful review helps someone else find their kind of place.
+              <Empty icon={<Pencil size={25} />} title="No reviews yet">
+                Write one and help the next person decide.
               </Empty>
             )}
           </section>
@@ -370,7 +364,7 @@ export function SpotDetail({
           <div className="card padded sticky-card">
             <h3>Your next study session</h3>
             <p className="muted">
-              Found your place? Make a little time for what matters.
+              Start a timer and keep track of the hours you put in here.
             </p>
             <Link className="button full" href={"/study?spot=" + id}>
               <Timer size={17} />
@@ -506,7 +500,7 @@ export function SpotDetail({
         <Modal
           title={
             modal === "review"
-              ? "A little insight goes a long way"
+              ? "Write a review"
               : modal === "conditions"
                 ? "How does it feel right now?"
                 : modal === "correction"

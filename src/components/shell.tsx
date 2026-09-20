@@ -78,7 +78,7 @@ export function Shell({ children }: { children: ReactNode }) {
             <small>Find your study neighborhood</small>
           </span>
         </div>
-        <p className="nav-caption">YOUR LITTLE STUDY WORLD</p>
+        <p className="nav-caption">STUDY SPOTS IN COLORADO</p>
         <nav aria-label="Main navigation">
           {nav.map(({ href, label, icon: Icon }) => (
             <Link
@@ -122,10 +122,11 @@ export function Shell({ children }: { children: ReactNode }) {
           <div className="sidebar-note">
             <span className="tiny-spark">✳</span>
             <strong>
-              A good place.
-              <br />A little progress.
+              Find a seat.
+              <br />
+              Get to work.
             </strong>
-            <p>Your next chapter starts here.</p>
+            <p>Spots, rooms, and a timer.</p>
           </div>
           {data?.user ? (
             <Link className="account-link" href="/profile">
@@ -138,7 +139,7 @@ export function Shell({ children }: { children: ReactNode }) {
             </Link>
           ) : (
             <Link className="button full" href="/login">
-              <LogIn size={17} /> Make yourself at home
+              <LogIn size={17} /> Sign in
             </Link>
           )}
         </div>
@@ -149,12 +150,10 @@ export function Shell({ children }: { children: ReactNode }) {
             <img src="/brand/deskhop-mark.svg" width="30" height="30" alt="" />
             <span>DeskHop.</span>
           </Link>
-          <span className="topbar-tagline">
-            A place to focus. People to do it with.
-          </span>
+          <span className="topbar-tagline">Study spots across Colorado.</span>
           <div className="topbar-actions">
             <Link className="text-link desktop-only" href="/about">
-              A little about us <ArrowUpRight size={14} />
+              About us <ArrowUpRight size={14} />
             </Link>
             {data?.user ? (
               <>
@@ -273,10 +272,10 @@ export function Shell({ children }: { children: ReactNode }) {
               <div>
                 <strong>
                   {session.state === "paused"
-                    ? "Taking a breather"
+                    ? "Paused"
                     : session.state === "awaiting_confirmation"
-                      ? "You reached your focus goal"
-                      : "A little focus, in progress"}
+                      ? "You hit your goal"
+                      : "Study session running"}
                 </strong>
                 <small>
                   {session.spot_name || "Your own space"} ·{" "}
@@ -302,7 +301,7 @@ export function Shell({ children }: { children: ReactNode }) {
                 <Users size={20} />
               </span>
               <div>
-                <strong>A familiar face, a little closer.</strong>
+                <strong>A friend is studying nearby.</strong>
                 <small>
                   {visibleFriends[0].name} is studying at{" "}
                   {visibleFriends[0].spot_name}
@@ -326,7 +325,7 @@ export function Shell({ children }: { children: ReactNode }) {
           {children}
         </main>
         <footer className="footer">
-          <span>Made for your next little breakthrough.</span>
+          <span>DeskHop · study spots in Colorado</span>
           <div>
             <Link href="/privacy">Privacy</Link>
             <Link href="/terms">Terms</Link>
@@ -429,10 +428,7 @@ export function Shell({ children }: { children: ReactNode }) {
         </Modal>
       )}
       {notifications && (
-        <Modal
-          title="Your little updates"
-          onClose={() => setNotifications(false)}
-        >
+        <Modal title="Notifications" onClose={() => setNotifications(false)}>
           {data?.notifications.length ? (
             <div className="notification-list">
               {data.notifications.map((n) => (

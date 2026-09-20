@@ -64,11 +64,7 @@ export function BookingForm({
               <Users size={28} />
             </span>
             <div>
-              <h3>
-                {rooms.length === 1
-                  ? rooms[0].name
-                  : "A little space to work together"}
-              </h3>
+              <h3>{rooms.length === 1 ? rooms[0].name : "Group rooms"}</h3>
               <p>
                 30–120 minutes · up to{" "}
                 {Math.max(...rooms.map((r) => r.capacity))} people
@@ -193,10 +189,7 @@ export function BookingForm({
         </>
       )}
       {review && selected && (
-        <Modal
-          title="A room for your next little breakthrough"
-          onClose={() => setReview(false)}
-        >
+        <Modal title="Review your reservation" onClose={() => setReview(false)}>
           <Badge tone={selectedRoom.demo ? "apricot" : "sage"}>
             {selectedRoom.demo ? "Demo reservation" : "Room reservation"}
           </Badge>
@@ -248,7 +241,7 @@ export function BookingForm({
       )}
       {confirmed && (
         <Modal
-          title="Your little corner is confirmed."
+          title="Reservation confirmed."
           onClose={() => setConfirmed(null)}
         >
           <div className="success-art">
@@ -275,8 +268,8 @@ export function Bookings() {
   return (
     <>
       <PageTitle
-        eyebrow="MAKE ROOM FOR YOUR PLANS"
-        title="Your next little get-together."
+        eyebrow="YOUR RESERVATIONS"
+        title="Rooms you’ve booked."
         description="Your confirmed rooms, all in one place."
       />
       <AuthGate>
@@ -302,14 +295,15 @@ function BookingList() {
       {!data.bookings.length ? (
         <Empty
           icon={<CalendarDays />}
-          title="A little room in your calendar"
+          title="No reservations yet"
           action={
             <Link className="button" href="/discover">
               Find a study spot <ArrowRight size={17} />
             </Link>
           }
         >
-          Find your next space and reserve a room. We’ll keep the details here.
+          Reserve a room from any spot that offers them and it will show up
+          here.
         </Empty>
       ) : (
         <>

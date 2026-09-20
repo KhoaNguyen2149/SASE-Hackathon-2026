@@ -29,7 +29,7 @@ export function Assistant() {
     <>
       <PageTitle
         eyebrow="DESKHOP PREMIUM"
-        title="A little help finding your place."
+        title="Ask for a spot recommendation."
         description="Describe your plans. Review the suggested places and make the final choice."
       />
       <AuthGate>

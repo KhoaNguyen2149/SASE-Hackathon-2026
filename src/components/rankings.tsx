@@ -31,9 +31,9 @@ export function Rankings() {
   return (
     <>
       <PageTitle
-        eyebrow="A LITTLE RECOGNITION"
-        title="Good places. Great contributors."
-        description="Discover what the community is enjoying across Colorado."
+        eyebrow="LEADERBOARDS"
+        title="Top spots and contributors."
+        description="What people are visiting and reviewing across Colorado."
       />
       <div className="ranking-controls card">
         <div className="segmented" role="group" aria-label="Ranking type">
@@ -152,13 +152,10 @@ export function Rankings() {
               ))}
             </div>
           ) : (
-            <Empty
-              icon={<Trophy />}
-              title="The next good contribution could be yours"
-            >
-              No eligible activity in this period yet. Explore a real spot,
-              leave an honest review, and help someone find their place.
-              Rankings fill from real community activity.
+            <Empty icon={<Trophy />} title="Nothing ranked yet">
+              No eligible activity in this period. Visit a real spot and leave
+              an honest review — rankings are built from real community
+              activity.
             </Empty>
           )}
         </>

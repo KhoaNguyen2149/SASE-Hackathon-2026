@@ -66,9 +66,7 @@ export function DecoratedIdentity({
             @{handle} <span className="level-badge">Level {level}</span>
           </p>
         </div>
-        <p className="profile-bio">
-          {decoration.bio || "A little space for a new story."}
-        </p>
+        <p className="profile-bio">{decoration.bio || "No bio yet."}</p>
         <div className="interest-pills">
           {decoration.interests.map((i) => (
             <span key={i}>{i}</span>
@@ -286,7 +284,7 @@ export function RewardsShop({ progress: p }: { progress: Progress }) {
     <div className="rewards-shop">
       <div className="section-heading">
         <div>
-          <h2>A little progress, made yours.</h2>
+          <h2>Rewards shop</h2>
           <p className="muted">
             Level {p.level} · {p.xp} XP · next level at {p.nextLevelXp} XP
           </p>
@@ -356,7 +354,7 @@ export function RewardsShop({ progress: p }: { progress: Progress }) {
           ))}
       </div>
       <Link className="text-link" href="/study">
-        Make time for a little focus →
+        Start a study session →
       </Link>
     </div>
   );
