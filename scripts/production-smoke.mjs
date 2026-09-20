@@ -24,6 +24,10 @@ const server = spawn(
       APP_URL: base,
       DATABASE_PATH: database,
       SMTP_HOST: "",
+      FIREBASE_API_KEY: "",
+      FIREBASE_SERVICE_ACCOUNT_JSON: "",
+      STRIPE_SECRET_KEY: "",
+      AI_API_KEY: "",
       SEED_DEMO: "true",
       SEED_REAL: "true",
     },
@@ -60,6 +64,23 @@ try {
   const script = html.match(/src="([^"]+\.js[^\"]*)"/)[1];
   assert.equal((await fetch(new URL(script, base))).status, 200);
   assert.equal((await fetch(`${base}/brand/deskhop-mark.svg`)).status, 200);
+  const timings = [];
+  let catalogBytes = 0;
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const started = performance.now();
+    const catalogResponse = await fetch(`${base}/api/spots`);
+    assert.equal(catalogResponse.status, 200);
+    const text = await catalogResponse.text();
+    timings.push(performance.now() - started);
+    catalogBytes = Buffer.byteLength(text);
+    const catalog = JSON.parse(text).data.spots;
+    assert.ok(catalog.length >= 5000);
+    assert.ok(catalog.filter((s) => s.photo_url).length >= 30);
+  }
+  timings.sort((a, b) => a - b);
+  console.log(
+    `Directory: ${catalogBytes} bytes, median ${timings[2].toFixed(1)}ms over five local production requests (not a load test).`,
+  );
   const response = await fetch(`${base}/api/auth/register`, {
     method: "POST",
     headers: { "Content-Type": "application/json", Origin: base },
@@ -83,7 +104,7 @@ try {
     restored.prepare("PRAGMA integrity_check").get().integrity_check,
     "ok",
   );
-  assert.equal(restored.prepare("SELECT COUNT(*) n FROM spots").get().n, 10);
+  assert.ok(restored.prepare("SELECT COUNT(*) n FROM spots").get().n >= 5000);
   restored.close();
   console.log(
     "Production smoke passed: standalone boot, assets, CSP, safe registration without SMTP, consistent backup integrity and catalog recovery.",

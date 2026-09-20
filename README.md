@@ -1,8 +1,8 @@
 # DeskHop
 
-A responsive web application for finding study spaces around Golden, Colorado, keeping focus sessions, reserving supported rooms, and sharing optional activity with friends.
+A responsive web application for finding study spaces across Colorado, keeping focus sessions, reserving supported rooms, and sharing optional activity with friends.
 
-**Status:** runnable local preview, with persistent accounts and working product flows. Public hosting and production email are not connected yet. The default directory contains four real venues with attributed facts; a separate sample campus demonstrates reservations. **Sample reservations never book real rooms.**
+**Status:** runnable local preview, with persistent accounts and working product flows. Public hosting and production email are not connected yet. The default directory contains 5,073 OpenStreetMap listings and four curated venues; a separate sample campus demonstrates reservations. **Sample reservations never book real rooms.**
 
 ## Run locally
 
@@ -14,9 +14,9 @@ Copy-Item .env.example .env.local
 npm run dev
 ```
 
-Open **http://127.0.0.1:3000**. Do not overwrite an existing `.env.local`. The development server binds to loopback. Accounts, bookings, reviews, and sessions persist in `data/deskhop.sqlite`.
+Open **http://localhost:3000**. Use `localhost` for Google login: it is already in the Firebase project's authorized domains; `127.0.0.1` is not. Do not overwrite an existing `.env.local`. The development server binds to loopback. Accounts, bookings, reviews, and sessions persist in `data/deskhop.sqlite`.
 
-Register using your own email and a new password. Without SMTP, development mode displays a clearly marked verification link so the local account flow can be exercised. **Production mode never exposes verification or reset tokens.** Production registration stays unavailable until SMTP is configured.
+Register using your own email and a new password. Without SMTP, development mode displays a clearly marked verification link so the local account flow can be exercised. **Production mode never exposes verification or reset tokens.** Managed production authentication uses Firebase once its environment settings are configured. Legacy email/password authentication requires SMTP in production.
 
 To try reservations, choose **Discover → Sample campus → Aspen Reading Room → Find a time**. To try friend sharing, use two verified accounts in separate browser profiles. Sessions start private; sharing a venue and enabling “Open to company” makes the one-recipient hop flow available to an accepted friend.
 
@@ -38,6 +38,7 @@ To try reservations, choose **Discover → Sample campus → Aspen Reading Room 
 | `npm run check` | TypeScript, lint, domain tests, production build |
 | `npm run test:e2e` | Chromium product flows and accessibility checks |
 | `npm run test:production` | Standalone production and backup smoke test after building |
+| `npm run test:firebase` | Explicit live Firebase check with a disposable account and temporary local database; sends no email |
 | `npx playwright install chromium` | Install test browser on a new machine |
 | `npm run build` / `npm start` | Build and run production mode |
 | `npm run db:admin -- you@example.com` | Grant a registered, verified account administrator access |
@@ -56,10 +57,12 @@ Read [deployment and recovery](docs/OPERATIONS.md) before hosting. Set the canon
 ## Product boundaries
 
 - Real listings are sourced directory entries, not venue partnerships. Amenities, coordinates, and hours that have not been verified remain unknown. Native real-world room inventory requires venue authorization; currently all native rooms are fictional.
-- The free search helper maps supported keywords to filters. There is no model API, seat prediction, payment, subscription, Spotify integration, push notification, or external reservation-provider integration.
+- The free search helper maps supported keywords to filters. Optional Stripe Premium ($7.99/month) and Gemini assistant modules are implemented but not activated. Seat prediction, Spotify, push notifications and external reservation APIs are not implemented.
 - A booking, a focus timer, a hop, and an observation are separate records. No feature proves physical presence or guarantees an open seat.
 - The manifest supports installation; there is no offline booking or offline data synchronization.
 - Privacy and terms pages describe this build. Operator identity, a monitored support contact, final deployment disclosures, and appropriate terms remain public-launch requirements.
 - This is an initial single-instance implementation, not a claim of a completed independent security audit, large-scale load test, or full accessibility certification.
 
 See [architecture](docs/ARCHITECTURE.md), [catalog provenance](docs/CATALOG.md), [launch status](docs/LAUNCH-STATUS.md), and [third-party notices](docs/THIRD-PARTY-NOTICES.md). Original design inputs remain under [docs/brand](docs/brand/README.md).
+
+See [current launch status](docs/LAUNCH-STATUS.md) for Firebase setup, partial location-photo coverage, rankings/rewards, measured directory improvements and remaining launch work.

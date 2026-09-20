@@ -1,5 +1,8 @@
+import { Assistant } from "@/components/assistant";
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
+import { Rankings } from "@/components/rankings";
+import { Premium } from "@/components/premium";
 import { Discover } from "@/components/discover";
 import { SpotDetail } from "@/components/spot-detail";
 import { Bookings } from "@/components/bookings";
@@ -20,6 +23,9 @@ export default async function Page({
   const path = page.join("/");
   let content;
   if (!path || path === "discover") content = <Discover />;
+  else if (path === "rankings") content = <Rankings />;
+  else if(path==="assistant")content=<Assistant/>;
+  else if (path === "premium") content = <Premium />;
   else if (path === "saved") content = <Discover saved />;
   else if (path === "study") content = <Study />;
   else if (path === "bookings") content = <Bookings />;

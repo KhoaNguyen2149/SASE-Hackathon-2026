@@ -1,13 +1,13 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
-import type { SpotSummary } from "@/lib/types";
+import type { DirectorySpot } from "@/lib/types";
 import "leaflet/dist/leaflet.css";
 export default function SpotMap({
   spots,
   selected,
   onSelect,
 }: {
-  spots: SpotSummary[];
+  spots: DirectorySpot[];
   selected: string | null;
   onSelect: (id: string) => void;
 }) {
@@ -16,6 +16,8 @@ export default function SpotMap({
     layer = useRef<import("leaflet").LayerGroup | null>(null);
   const [ready, setReady] = useState(false),
     [failed, setFailed] = useState(false);
+  const markers = useRef(new Map<string, import("leaflet").CircleMarker>());
+  const previous = useRef<string | null>(null);
   const selectRef = useRef(onSelect);
   useEffect(() => {
     selectRef.current = onSelect;
@@ -28,7 +30,8 @@ export default function SpotMap({
         const instance = L.map(element.current, {
           scrollWheelZoom: false,
           zoomControl: true,
-        }).setView([39.7525, -105.2225], 15);
+          preferCanvas: true,
+        }).setView([39.0, -105.5], 7);
         map.current = instance;
         L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
           attribution:
@@ -49,19 +52,25 @@ export default function SpotMap({
   }, []);
   useEffect(() => {
     if (!ready) return;
+    let cancelled = false;
     void import("leaflet").then((L) => {
-      layer.current?.clearLayers();
+      if (cancelled || !layer.current || !map.current) return;
+      layer.current.clearLayers();
+      markers.current.clear();
       for (const s of spots) {
-        const marker = L.marker([s.lat, s.lng], {
-          title: s.name,
-          keyboard: true,
-          icon: L.divIcon({
-            className: "map-pin-wrapper",
-            html: `<span class="map-pin ${selected === s.id ? "selected" : ""}">${s.category === "cafe" ? "☕" : s.category === "outdoor" ? "♧" : "⌂"}</span>`,
-            iconSize: [42, 48],
-            iconAnchor: [21, 48],
-          }),
+        const marker = L.circleMarker([s.lat, s.lng], {
+          radius: 6,
+          color: "#285547",
+          fillColor:
+            s.category === "cafe"
+              ? "#efb066"
+              : s.category === "outdoor"
+                ? "#91a47b"
+                : "#6e9ba0",
+          fillOpacity: 0.9,
+          weight: 2,
         });
+        markers.current.set(s.id, marker);
         const tooltip = document.createElement("div");
         tooltip.textContent = s.name;
         marker
@@ -69,12 +78,22 @@ export default function SpotMap({
           .on("click", () => selectRef.current(s.id))
           .addTo(layer.current!);
       }
-      if (selected) {
-        const s = spots.find((s) => s.id === selected);
-        if (s) map.current?.panTo([s.lat, s.lng], { animate: false });
-      }
+      if (spots.length && map.current)
+        map.current.fitBounds(
+          L.latLngBounds(spots.map((s) => [s.lat, s.lng] as [number, number])),
+          { padding: [30, 30], maxZoom: 15, animate: false },
+        );
     });
-  }, [spots, selected, ready]);
+    return () => {
+      cancelled = true;
+    };
+  }, [spots, ready]);
+  useEffect(() => {
+    if (previous.current) markers.current.get(previous.current)?.setRadius(6);
+    const marker = selected ? markers.current.get(selected) : undefined;
+    marker?.setRadius(10);
+    previous.current = selected;
+  }, [selected, ready]);
   return (
     <div className="map-container">
       <div
@@ -90,7 +109,7 @@ export default function SpotMap({
       )}
       <span className="map-label">
         {spots.some((s) => s.demo) ? "Illustrative sample pins" : "Study spots"}{" "}
-        · Golden, CO
+        · Colorado
       </span>
     </div>
   );

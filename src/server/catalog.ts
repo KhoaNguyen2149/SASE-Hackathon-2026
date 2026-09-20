@@ -96,9 +96,23 @@ export function spotSummary(spot: Spot, userId?: string): SpotSummary {
   };
 }
 export function listSpots(userId?: string) {
-  return all<Spot>("SELECT * FROM spots WHERE published=1 ORDER BY name").map(
-    (s) => spotSummary(s, userId),
+  const activeReports = new Set(
+    all<{ spot_id: string }>(
+      "SELECT DISTINCT spot_id FROM reports WHERE created_at>?",
+      Date.now() - 45 * 60000,
+    ).map((r) => r.spot_id),
   );
+  return all<SpotSummary>(
+    `SELECT s.*,r.rating,COALESCE(r.review_count,0) review_count,COALESCE(rm.rooms,0) rooms,CASE WHEN sv.user_id IS NULL THEN 0 ELSE 1 END saved FROM spots s LEFT JOIN (SELECT r.spot_id,AVG(r.rating) rating,COUNT(*) review_count FROM reviews r JOIN users u ON u.id=r.user_id WHERE r.hidden=0 AND u.suspended=0 GROUP BY r.spot_id) r ON r.spot_id=s.id LEFT JOIN (SELECT spot_id,COUNT(*) rooms FROM rooms WHERE enabled=1 GROUP BY spot_id) rm ON rm.spot_id=s.id LEFT JOIN saved sv ON sv.spot_id=s.id AND sv.user_id=? WHERE s.published=1 ORDER BY s.demo DESC,s.name`,
+    userId || "",
+  ).map((s) => ({
+    ...s,
+    saved: !!s.saved,
+    conditions: activeReports.has(s.id)
+      ? conditions(s.id)
+      : { state: "insufficient_data" as const },
+    open: isOpen(s, Date.now(), Date.now() + 60000),
+  }));
 }
 export function reviews(spotId: string, userId?: string) {
   return all<Review>(
@@ -117,5 +131,43 @@ export function detail(spotId: string, userId?: string) {
       spotId,
     ),
     reviews: reviews(spotId, userId),
+  };
+}
+
+export function directorySpot(
+  s: SpotSummary,
+  start: number,
+  end: number,
+): import("@/lib/types").DirectorySpot {
+  return {
+    id: s.id,
+    name: s.name,
+    category: s.category,
+    description: s.imported_at
+      ? "Community map listing. Confirm access and study amenities before visiting."
+      : s.description,
+    address: s.address,
+    lat: s.lat,
+    lng: s.lng,
+    power: s.power,
+    wifi: s.wifi,
+    coffee: s.coffee,
+    noise: s.noise,
+    access: s.access,
+    image: s.image,
+    demo: s.demo,
+    verified_at: s.verified_at,
+    group_size: s.group_size,
+    mapped: s.mapped,
+    city: s.city || undefined,
+    photo_url: s.photo_url || undefined,
+    photo_credit: s.photo_credit || undefined,
+    photo_source: s.photo_source || undefined,
+    saved: s.saved,
+    conditions: s.conditions,
+    rating: s.rating,
+    review_count: s.review_count,
+    rooms: s.rooms,
+    open: isOpen(s, start, end),
   };
 }

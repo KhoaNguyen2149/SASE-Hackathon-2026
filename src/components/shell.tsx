@@ -3,6 +3,8 @@ import { useState, type ReactNode } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
+  Trophy,
+  Crown,
   ArrowUpRight,
   Bell,
   BookOpen,
@@ -61,8 +63,8 @@ export function Shell({ children }: { children: ReactNode }) {
             <MapPin size={18} />
           </span>
           <span>
-            <strong>Golden, Colorado</strong>
-            <small>Your campus neighborhood</small>
+            <strong>Colorado</strong>
+            <small>Find your study neighborhood</small>
           </span>
         </div>
         <p className="nav-caption">YOUR LITTLE STUDY WORLD</p>
@@ -102,6 +104,22 @@ export function Shell({ children }: { children: ReactNode }) {
           >
             <BookOpen size={20} />
             Following feed
+          </Link>
+        </nav>
+        <nav aria-label="Community and membership">
+          <Link
+            className={`nav-link ${pathname === "/rankings" ? "active" : ""}`}
+            href="/rankings"
+          >
+            <Trophy size={20} />
+            Rankings
+          </Link>
+          <Link
+            className={`nav-link ${pathname === "/premium" ? "active" : ""}`}
+            href="/premium"
+          >
+            <Crown size={20} />
+            {data?.premium ? "Your Premium" : "DeskHop Premium"}
           </Link>
         </nav>
         <div className="sidebar-bottom">

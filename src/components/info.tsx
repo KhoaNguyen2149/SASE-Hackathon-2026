@@ -25,12 +25,14 @@ export function InfoPage({ page }: { page: "about" | "privacy" | "terms" }) {
             </p>
             <h2>What you’re exploring</h2>
             <p>
-              Discovery has a small Golden venue catalog sourced from official
-              websites, plus a separate fictional sample campus. Real venue
+              Discovery covers Colorado through OpenStreetMap and curated venue
+              sources, plus a separate fictional sample campus. Real venue
               entries identify their sources and unknown facts. The sample
               campus has fictional names, amenities, hours, room inventory, and
-              map pins. The illustrations are original artwork, not venue
-              photographs. A demo reservation never books a real campus room.
+              map pins. Location photos are available for some venues, with
+              source and license credits. They may show older conditions.
+              Missing photos are labeled. A demo reservation never books a real
+              campus room.
             </p>
             <p>
               The actions themselves are saved: your accounts, reviews,
@@ -191,9 +193,10 @@ export function InfoPage({ page }: { page: "about" | "privacy" | "terms" }) {
             <h2>Your account</h2>
             <p>
               Keep credentials private. You can export your data or delete your
-              account from Profile. This build charges no fees and offers no
-              subscription. Future paid features would require their own
-              explicit purchase terms.
+              account from Profile. Premium is planned at $7.99 USD per month,
+              with recurring billing disclosed before checkout. Checkout remains
+              unavailable until the payment service is connected. Earned Leaves
+              have no cash value and are used only for profile decorations.
             </p>
           </>
         )}

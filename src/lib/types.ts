@@ -3,7 +3,7 @@ export type Visibility =
 export type AvailabilityMode =
   "available" | "open_to_join" | "busy" | "dnd" | null;
 export interface User {
-  password_enabled?:number;
+  password_enabled?: number;
   id: string;
   name: string;
   handle: string;
@@ -44,7 +44,7 @@ export interface Spot {
   photo_url?: string;
   photo_credit?: string;
   photo_source?: string;
-  imported_at?: number|null;
+  imported_at?: number | null;
 }
 export interface Room {
   id: string;
@@ -182,5 +182,28 @@ export interface Bootstrap {
   serverTime: number;
   demo: boolean;
   emailEnabled: boolean;
+  premium?: boolean;
+  billingEnabled?: boolean;
+  aiEnabled?: boolean;
   googleEnabled?: boolean;
+  firebase?: {
+    apiKey: string;
+    authDomain: string;
+    projectId: string;
+    appId: string;
+  } | null;
+  progress?: import("./rewards").Progress | null;
 }
+
+export type DirectorySpot = Omit<
+  SpotSummary,
+  | "source"
+  | "hours"
+  | "access_note"
+  | "accessibility"
+  | "website"
+  | "timezone"
+  | "published"
+  | "booking_url"
+  | "imported_at"
+>;

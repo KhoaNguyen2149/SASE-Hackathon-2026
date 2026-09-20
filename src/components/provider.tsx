@@ -26,6 +26,10 @@ type Context = {
   busy: boolean;
   error: string | null;
 };
+const directoryCache = new Map<
+  string,
+  { expires: number; promise: Promise<unknown> }
+>();
 const AppContext = createContext<Context | null>(null);
 export function Provider({ children }: { children: ReactNode }) {
   const [data, setData] = useState<Bootstrap | null>(null),
@@ -39,7 +43,8 @@ export function Provider({ children }: { children: ReactNode }) {
     offset = useRef(0),
     refreshGeneration = useRef(0),
     noticeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const refresh = useCallback(async () => {
+  const refresh = useCallback(async (invalidate = true) => {
+    if (invalidate) directoryCache.clear();
     const generation = ++refreshGeneration.current;
     try {
       const result = await api<Bootstrap>("bootstrap");
@@ -57,10 +62,10 @@ export function Provider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const initial = setTimeout(() => void refresh(), 0);
     const timer = setInterval(() => {
-      if (document.visibilityState === "visible") void refresh();
+      if (document.visibilityState === "visible") void refresh(false);
     }, 30000);
     const focus = () => {
-      if (document.visibilityState === "visible") void refresh();
+      if (document.visibilityState === "visible") void refresh(false);
     };
     document.addEventListener("visibilitychange", focus);
     window.addEventListener("online", focus);
@@ -154,7 +159,8 @@ export function useApp() {
   return context;
 }
 export function useResource<T>(path: string | null) {
-  const { version } = useApp();
+  const { version, data: app } = useApp();
+  const userId = app?.user?.id || "guest";
   const [result, setResult] = useState<{
     path: string;
     data: T | null;
@@ -163,7 +169,25 @@ export function useResource<T>(path: string | null) {
   useEffect(() => {
     let valid = true;
     if (!path) return;
-    api<T>(path)
+    const key = `${userId}:${path}`;
+    const cached = directoryCache.get(key);
+    const catalog = path === "spots" || path.startsWith("spots?");
+    const request =
+      catalog && cached && cached.expires > Date.now()
+        ? (cached.promise as Promise<T>)
+        : api<T>(path);
+    if (catalog && request !== cached?.promise) {
+      if (directoryCache.size >= 12) directoryCache.clear();
+      directoryCache.set(key, {
+        expires: Date.now() + 120000,
+        promise: request,
+      });
+      void request.catch(() => {
+        if (directoryCache.get(key)?.promise === request)
+          directoryCache.delete(key);
+      });
+    }
+    request
       .then((data) => {
         if (valid) setResult({ path, data, error: null });
       })
@@ -173,7 +197,7 @@ export function useResource<T>(path: string | null) {
     return () => {
       valid = false;
     };
-  }, [path, version]);
+  }, [path, version, userId]);
   return {
     data: path && result?.path === path ? result.data : null,
     error: path && result?.path === path ? result.error : null,

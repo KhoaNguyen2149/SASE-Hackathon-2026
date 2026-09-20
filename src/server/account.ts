@@ -38,6 +38,12 @@ export function exportAccount(user: User) {
     exportedAt: new Date().toISOString(),
     profile: user,
     decoration: decoration(user.id),
+    rewards: all("SELECT * FROM rewards WHERE user_id=?", user.id),
+    cosmetics: all("SELECT * FROM cosmetics_owned WHERE user_id=?", user.id),
+    subscription: one(
+      "SELECT status,period_end FROM subscriptions WHERE user_id=?",
+      user.id,
+    ),
     sessions: all("SELECT * FROM study_sessions WHERE user_id=?", user.id),
     bookings: all("SELECT * FROM bookings WHERE user_id=?", user.id),
     reviews: all("SELECT * FROM reviews WHERE user_id=?", user.id),

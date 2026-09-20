@@ -24,5 +24,5 @@ COPY --from=build --chown=deskhop:deskhop /app/public ./public
 COPY --from=build --chown=deskhop:deskhop /app/scripts/ops.mjs ./scripts/ops.mjs
 USER deskhop
 EXPOSE 3000
-HEALTHCHECK --interval=30s --timeout=5s --start-period=30s CMD node -e "fetch('http://127.0.0.1:3000/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+HEALTHCHECK --interval=30s --timeout=5s --start-period=30s CMD node -e "fetch('http://127.0.0.1:'+(process.env.PORT||3000)+'/api/health',{signal:AbortSignal.timeout(4000)}).then(r=>{process.exitCode=r.ok?0:1}).catch(()=>{process.exitCode=1})"
 CMD ["node", "server.js"]

@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
@@ -17,7 +17,7 @@ import {
 } from "lucide-react";
 import { useApp, useResource } from "./provider";
 import { AuthGate, Modal, PageTitle } from "./ui";
-import type { SpotSummary, StudySession, Visibility } from "@/lib/types";
+import type { DirectorySpot, StudySession, Visibility } from "@/lib/types";
 import { dateLabel, elapsed } from "@/lib/time";
 export function Study() {
   return (
@@ -36,16 +36,31 @@ export function Study() {
 function StudyContent() {
   const { data: app, now, mutate, busy } = useApp();
   const params = useSearchParams();
-  const { data: catalog } = useResource<{ spots: SpotSummary[] }>("spots");
+  const { data: catalog } = useResource<{ spots: DirectorySpot[] }>("spots");
   const { data: history } = useResource<{ sessions: StudySession[] }>(
     "study/history",
   );
   const [spot, setSpot] = useState(params.get("spot") || ""),
     [minutes, setMinutes] = useState(25),
+    [spotQuery, setSpotQuery] = useState(""),
     [visibility, setVisibility] = useState<Visibility>("private"),
     [shareCompletion, setShareCompletion] = useState(false),
     [confirmCancel, setConfirmCancel] = useState(false),
     [completed, setCompleted] = useState<StudySession | null>(null);
+  const choices = useMemo(() => {
+    const all = catalog?.spots || [];
+    const matches = all
+      .filter((p) =>
+        `${p.name} ${p.address}`
+          .toLowerCase()
+          .includes(spotQuery.toLowerCase()),
+      )
+      .slice(0, 60);
+    const selected = all.find((p) => p.id === spot);
+    return selected && !matches.some((p) => p.id === spot)
+      ? [selected, ...matches]
+      : matches;
+  }, [catalog, spotQuery, spot]);
   const s = app?.session;
   const focused = s ? elapsed(s, now) : 0;
   const remaining = s ? Math.max(0, s.target_seconds - focused) : minutes * 60;
@@ -234,6 +249,14 @@ function StudyContent() {
               ))}
             </div>
             <div className="focus-start-form">
+              <label className="field">
+                Search places
+                <input
+                  value={spotQuery}
+                  onChange={(e) => setSpotQuery(e.target.value)}
+                  placeholder="Name or city (up to 60 matches)"
+                />
+              </label>
               <div className="form-grid">
                 <label className="field">
                   Your study spot
@@ -242,7 +265,7 @@ function StudyContent() {
                     onChange={(e) => setSpot(e.target.value)}
                   >
                     <option value="">My own space</option>
-                    {catalog?.spots.map((p) => (
+                    {choices.map((p) => (
                       <option key={p.id} value={p.id}>
                         {p.name}
                       </option>

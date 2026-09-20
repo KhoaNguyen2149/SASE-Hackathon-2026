@@ -1,3 +1,4 @@
+import { verifyManagedSession } from "./firebase";
 import {
   randomBytes,
   scrypt as scryptCallback,
@@ -19,7 +20,7 @@ export async function passwordHash(password: string) {
   return `${salt}:${derived.toString("hex")}`;
 }
 export async function passwordMatches(password: string, stored: string) {
-  if(!/^[a-f0-9]{32}:[a-f0-9]{128}$/.test(stored))return false;
+  if (!/^[a-f0-9]{32}:[a-f0-9]{128}$/.test(stored)) return false;
   const [salt, encoded] = stored.split(":");
   const actual = (await scrypt(password, salt, 64)) as Buffer;
   const expected = Buffer.from(encoded, "hex");
@@ -40,14 +41,18 @@ export function currentUser(token?: string): User | null {
     ) || null
   );
 }
-export function signIn(userId: string,googleReauth=false) {
+export async function authenticatedUser(token?: string) {
+  const user = currentUser(token);
+  return user && token ? verifyManagedSession(token, user) : null;
+}
+export function signIn(userId: string, googleReauth = false) {
   const token = randomBytes(32).toString("base64url");
   run(
     "INSERT INTO auth_sessions(token_hash,user_id,expires_at,google_authenticated_at) VALUES(?,?,?,?)",
     hash(token),
     userId,
     Date.now() + 30 * 86400000,
-    googleReauth?Date.now():0,
+    googleReauth ? Date.now() : 0,
   );
   return token;
 }
@@ -231,9 +236,25 @@ export async function resetPassword(token: string, password: string) {
     return { reset: true };
   });
 }
-export async function confirmPassword(user: User, password: string,token?:string) {
-  if(user.password_enabled===0){
-    assert(token&&one("SELECT 1 FROM auth_sessions WHERE token_hash=? AND user_id=? AND google_authenticated_at>?",hash(token),user.id,Date.now()-300000),"REAUTH_REQUIRED","Sign in with Google again, then delete your account within five minutes.",403);return;
+export async function confirmPassword(
+  user: User,
+  password: string,
+  token?: string,
+) {
+  if (user.password_enabled === 0) {
+    assert(
+      token &&
+        one(
+          "SELECT 1 FROM auth_sessions WHERE token_hash=? AND user_id=? AND google_authenticated_at>?",
+          hash(token),
+          user.id,
+          Date.now() - 300000,
+        ),
+      "REAUTH_REQUIRED",
+      "Sign in with Google again, then delete your account within five minutes.",
+      403,
+    );
+    return;
   }
   rateLimit(`reauth:${user.id}`, 5, 900000);
   const row = one<{ password_hash: string }>(

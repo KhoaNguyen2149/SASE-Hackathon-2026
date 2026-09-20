@@ -48,7 +48,7 @@ Compose binds to loopback and persists a named volume. A public deployment needs
 The prepared blueprint uses a Starter web service and a 1 GB disk at `/app/data`, with manual deploys. As checked September 19, 2026, the listed base price is $7/month plus $0.25/GB/month for storage. Taxes, transfer, and other usage can add costs. Confirm current [pricing](https://render.com/pricing) and obtain owner approval before creating the paid service. Free web services cannot retain this SQLite database across deployments.
 
 1. Review and push the application to the owner’s repository. Keep `.env.local`, databases, and test artifacts out of Git.
-2. Create the service from `render.yaml`, confirm plan, disk, and spending settings, and set SMTP secrets. Do not enable paid add-ons without separate approval.
+2. Connect the Render GitHub app with access restricted to this repository. Create the service from `render.yaml`, confirm plan, disk, and spending settings, and set Firebase configuration and the server credential in Render secrets. SMTP is unnecessary for the managed authentication path. Do not enable paid add-ons without separate approval.
 3. Deploy one instance. Confirm the persistent mount is writable by runtime user 1001 and `/api/health` succeeds.
 4. Set `APP_URL` to the final HTTPS origin if using a custom domain; otherwise use Render’s supplied external URL.
 5. Register and verify the operator account, then use the service shell:
@@ -84,3 +84,15 @@ The application limits auth attempts and mutation rates. At a public reverse pro
 Review correction reports and flagged reviews in `/admin`. Every catalog update and moderation decision requires recorded evidence or a reason. Check published opening hours and exceptions weekly and after reports of changes. Only enable real native room inventory with documented venue authorization and a process to prevent out-of-band double booking.
 
 Blocking and revoking sharing take effect on subsequent authorized reads and deliveries. A recipient may already have seen a prior notification; software cannot retract what someone has read or captured. Investigate privacy incidents, preserve the minimum necessary audit evidence, and contact affected users through the operator’s reviewed incident process.
+
+## Managed authentication and optional paid integrations
+
+Use `http://localhost:3000` for local Google sign-in; the Firebase allowlist does not include `127.0.0.1`. Run `npm run test:firebase` explicitly to test the configured live Firebase project. It creates and deletes one randomly named disposable identity and uses an isolated temporary SQLite database. It validates sign-in, verification/recovery action codes, session exchange, logout, and disabled-account rejection without sending mail. It does not prove inbox delivery or Google popup completion. The ordinary browser and standalone smoke suites clear external-service credentials to keep tests isolated.
+
+The Firebase Spark project is `deskhop-9a29f`; Google and Email/Password providers are enabled. Configure `FIREBASE_API_KEY`, `FIREBASE_PROJECT_ID`, `FIREBASE_AUTH_DOMAIN`, `FIREBASE_APP_ID`, and the private `FIREBASE_SERVICE_ACCOUNT_JSON` through ignored local environment configuration or Render server secrets. Never commit the service-account JSON. Add the exact app host to Firebase Authorized domains, then test Google popup sign-in, email verification/recovery, revoked sessions, and recent-login account deletion. Provider setup alone is not proof of a working app connection. Legacy local authentication is for development; SMTP documentation above applies only to that path when Firebase is absent.
+
+Stripe remains unconfigured. Configure a $7.99 USD recurring monthly price, secret key and signed webhook secret only after merchant onboarding and end-to-end test-mode verification. Do not enable live checkout before subscription lifecycle, duplicate checkout and account-deletion behavior are verified. The Premium badge reads server-side subscription status and expiry.
+
+Gemini remains unconfigured. `AI_DAILY_CALL_LIMIT=0` disables requests; configuring a key and model also requires a positive explicit site allowance. The quota limits calls, not dollars: verify provider pricing and billing limits before activating a paid model. Current code additionally limits a member to ten calls/day and site usage to at most 100/day. No automatic reservation action is delegated to the model.
+
+The user's current hosting/service allowance is $25 total, not an unlimited recurring budget. No paid service has been activated. Resolve ongoing hosting/bandwidth charges and operator billing controls before launch.

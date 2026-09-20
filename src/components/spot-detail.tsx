@@ -1,6 +1,8 @@
 "use client";
 import { useState } from "react";
 import Link from "next/link";
+import { VenuePhoto, PhotoCredit } from "./venue-photo";
+import { directions } from "@/lib/directions";
 import {
   ArrowLeft,
   ArrowUpRight,
@@ -91,7 +93,13 @@ export function SpotDetail({
             <h1>{spot.name}</h1>
             <p className="address-line">
               <MapPin size={16} />
-              {spot.address}
+              <a
+                href={directions(spot).google}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                {spot.address}
+              </a>
             </p>
           </div>
           <button
@@ -108,12 +116,9 @@ export function SpotDetail({
         </div>
       </div>
       <div className="detail-hero-image">
-        <img
-          src={`/illustrations/${spot.image}.svg`}
-          alt={`Illustration of a ${categoryNames[spot.category].toLowerCase()} study setting; not a photograph of the venue.`}
-        />
-        <span className="image-caption">An illustrated little preview</span>
+        <VenuePhoto key={spot.id} spot={spot} detail />
       </div>
+      <PhotoCredit spot={spot} />
       <div className="detail-layout">
         <div className="detail-main">
           <section className="detail-section">
@@ -380,12 +385,22 @@ export function SpotDetail({
             {!spot.demo && (
               <a
                 className="button secondary full"
-                href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(spot.address)}`}
+                href={directions(spot).google}
                 target="_blank"
                 rel="noopener noreferrer"
               >
                 <Navigation size={17} />
-                Get directions
+                Open in Google Maps
+              </a>
+            )}
+            {!spot.demo && (
+              <a
+                className="button secondary full"
+                href={directions(spot).apple}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Open in Apple Maps
               </a>
             )}
             {spot.demo === 1 && (

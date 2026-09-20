@@ -1,4 +1,5 @@
-# This plan incurs charges. Do not deploy until the owner approves the current price.
+# Paid single-instance hosting. The owner's allowance is $25 total;
+# Render's build-spend limit is not a cap on recurring hosting charges.
 services:
   - type: web
     name: deskhop
@@ -17,14 +18,20 @@ services:
       - key: DATABASE_PATH
         value: /app/data/deskhop.sqlite
       - key: SEED_DEMO
+        value: "false"
+      - key: SEED_REAL
         value: "true"
-      - key: SMTP_HOST
+      - key: SEED_COLORADO
+        value: "true"
+      - key: FIREBASE_PROJECT_ID
+        value: deskhop-9a29f
+      - key: FIREBASE_AUTH_DOMAIN
+        value: deskhop-9a29f.firebaseapp.com
+      - key: FIREBASE_API_KEY
         sync: false
-      - key: SMTP_PORT
-        value: "587"
-      - key: SMTP_USER
+      - key: FIREBASE_APP_ID
         sync: false
-      - key: SMTP_PASS
+      - key: FIREBASE_SERVICE_ACCOUNT_JSON
         sync: false
-      - key: SMTP_FROM
-        sync: false
+      - key: AI_DAILY_CALL_LIMIT
+        value: "0"

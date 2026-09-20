@@ -1,5 +1,8 @@
 "use client";
 import Link from "next/link";
+import { DecoratedIdentity } from "./profile-decoration";
+import type { ProfileDecoration } from "@/lib/profile-style";
+import type { Progress } from "@/lib/rewards";
 import { BookOpen, Star, UserPlus } from "lucide-react";
 import { useApp, useResource } from "./provider";
 import { AuthGate, Avatar, Empty, ErrorState, Loading, PageTitle } from "./ui";
@@ -75,6 +78,12 @@ export function PublicProfile({ handle }: { handle: string }) {
   const { data: app, mutate, requireAuth, busy } = useApp();
   const { data, error } = useResource<{
     user: { id: string; name: string; handle: string };
+    decoration: ProfileDecoration;
+    progress: Pick<Progress, "level" | "achievements">;
+    premium: boolean;
+    followers: number;
+    followingCount: number;
+    pinnedSpots: { id: string; name: string }[];
     following: boolean;
     reviews: Review[];
   }>(`profiles/${handle}`);
@@ -83,15 +92,24 @@ export function PublicProfile({ handle }: { handle: string }) {
   const own = app?.user?.id === data.user.id;
   return (
     <>
+      <DecoratedIdentity
+        name={data.user.name}
+        handle={data.user.handle}
+        decoration={data.decoration}
+        level={data.progress.level}
+        premium={data.premium}
+      />
       <div className="public-profile-header">
-        <Avatar name={data.user.name} size="large" />
-        <div>
-          <p className="eyebrow">A LITTLE COMMUNITY KNOWLEDGE</p>
-          <h1>{data.user.name}</h1>
-          <p>
-            @{data.user.handle} · {data.reviews.length} public{" "}
-            {data.reviews.length === 1 ? "review" : "reviews"}
-          </p>
+        <div className="public-counts">
+          <span>
+            <strong>{data.followers}</strong> followers
+          </span>
+          <span>
+            <strong>{data.followingCount}</strong> following
+          </span>
+          <span>
+            <strong>{data.reviews.length}</strong> reviews
+          </span>
         </div>
         {!own && (
           <div className="button-row">
@@ -132,6 +150,38 @@ export function PublicProfile({ handle }: { handle: string }) {
           </div>
         )}
       </div>
+      {own && (
+        <Link className="button secondary" href="/profile">
+          Decorate my profile
+        </Link>
+      )}
+      <div className="achievement-grid">
+        {data.progress.achievements
+          .filter((a) => a.earned)
+          .map((a) => (
+            <div className="achievement earned" key={a.id}>
+              <span>??</span>
+              <strong>{a.name}</strong>
+              <small>{a.description}</small>
+            </div>
+          ))}
+      </div>
+      {data.pinnedSpots.length > 0 && (
+        <section className="pinned-spots">
+          <h2>A few favorite corners</h2>
+          <div className="interest-pills">
+            {data.pinnedSpots.map((s) => (
+              <Link
+                className="button secondary"
+                href={"/spots/" + s.id}
+                key={s.id}
+              >
+                ?? {s.name}
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
       <p className="privacy-note">
         This is a public review profile. Study sessions and friend availability
         are shared separately.

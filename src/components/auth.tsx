@@ -15,11 +15,11 @@ import { HeroArt } from "./hero-art";
 type Mode =
   "login" | "register" | "forgot-password" | "reset-password" | "verify";
 export function Auth({ mode }: { mode: Mode }) {
-  const { refresh } = useApp();
+  const { refresh, data: app } = useApp();
   const router = useRouter(),
     params = useSearchParams();
   const [pending, setPending] = useState(false),
-    [error, setError] = useState(""),
+    [error, setError] = useState(params.get("error") || ""),
     [success, setSuccess] = useState(""),
     [developmentLink, setDevelopmentLink] = useState(""),
     [showPassword, setShowPassword] = useState(false);
@@ -37,7 +37,39 @@ export function Auth({ mode }: { mode: Mode }) {
     const form = new FormData(e.currentTarget);
     const values = Object.fromEntries(form);
     try {
-      if (mode === "verify") {
+      if (
+        app?.firebase &&
+        ["login", "register", "forgot-password"].includes(mode)
+      ) {
+        const managed = await import("@/lib/firebase-client");
+        if (mode === "forgot-password") {
+          await managed.managedReset(app.firebase, String(values.email));
+          setSuccess(
+            "If that address has an account, a reset link is on its way.",
+          );
+        } else {
+          const result = await managed.managedSignIn(
+            app.firebase,
+            mode as "login" | "register",
+            values,
+          );
+          await refresh();
+          if (mode === "register" && !result.verified)
+            setSuccess(
+              "Your account is ready. Check your email for the Firebase verification link, then sign in again.",
+            );
+          else {
+            const next = params.get("next");
+            router.push(
+              next?.startsWith("/") &&
+                !next.startsWith("//") &&
+                !next.includes("\\")
+                ? next
+                : "/discover",
+            );
+          }
+        }
+      } else if (mode === "verify") {
         await post("auth/verify", { token: params.get("token") });
         await refresh();
         setSuccess(
@@ -84,6 +116,30 @@ export function Auth({ mode }: { mode: Mode }) {
       setPending(false);
     }
   }
+  async function google() {
+    if (!app?.firebase) return;
+    setPending(true);
+    setError("");
+    try {
+      const { managedSignIn } = await import("@/lib/firebase-client");
+      await managedSignIn(app.firebase, "google");
+      await refresh();
+      const next = params.get("next");
+      router.push(
+        next?.startsWith("/") && !next.startsWith("//") && !next.includes("\\")
+          ? next
+          : "/discover",
+      );
+    } catch (e) {
+      setError(
+        e instanceof Error
+          ? e.message
+          : "Google sign-in could not be completed.",
+      );
+    } finally {
+      setPending(false);
+    }
+  }
   return (
     <div className="auth-layout">
       <div className="auth-story">
@@ -112,6 +168,32 @@ export function Auth({ mode }: { mode: Mode }) {
                 ? "Confirm your email to complete your account."
                 : "We all need a little reset sometimes."}
         </p>
+        {["login", "register"].includes(mode) && (
+          <div className="auth-alternatives">
+            <button
+              className="button google-button full"
+              disabled={pending || !app?.firebase}
+              onClick={() => void google()}
+            >
+              Continue with Google
+            </button>
+            {!app?.firebase && (
+              <p className="fine-print">
+                Google sign-in will open when the managed sign-in service is
+                connected.
+              </p>
+            )}
+            <Link className="button secondary full" href="/discover">
+              Continue as guest
+            </Link>
+            <p className="fine-print">
+              Guests can explore places, directions, public profiles, and
+              rankings. Sign in to save, review, book, earn rewards, and connect
+              with friends.
+            </p>
+            <div className="auth-divider">or use email</div>
+          </div>
+        )}
         {success ? (
           <div className="auth-success">
             <CheckCircle2 size={36} />

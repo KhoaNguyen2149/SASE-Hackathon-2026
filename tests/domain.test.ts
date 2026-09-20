@@ -9,6 +9,7 @@ import type { User, Hop } from "../src/lib/types";
 const dir = mkdtempSync(join(tmpdir(), "deskhop-test-"));
 process.env.DATABASE_PATH = join(dir, "test.sqlite");
 process.env.SEED_DEMO = "true";
+process.env.SEED_COLORADO = "false";
 const { db, one, run } = await import("../src/server/db");
 const { AppError } = await import("../src/server/errors");
 const { createBooking, cancelBooking, availability } =
@@ -818,4 +819,147 @@ test("administration rejects a normal verified user and accepts an audited catal
     1,
   );
   run("DELETE FROM spots WHERE id=?", venue.id);
+});
+
+const { syncRewards, progress, buyCosmetic } =
+  await import("../src/server/rewards");
+const { rankWindow, rankings } = await import("../src/server/rankings");
+const { saveDecoration } = await import("../src/server/profiles");
+const { defaultDecoration } = await import("../src/lib/profile-style");
+const { publicProfile } = await import("../src/server/community");
+const { directions } = await import("../src/lib/directions");
+test("review rewards are once per real venue and edits do not inflate rankings", () => {
+  const spot = one<{ id: string }>(
+    "SELECT id FROM spots WHERE demo=0 LIMIT 1",
+  )!;
+  const review = {
+    rating: 5,
+    noise: 2,
+    crowd: 2,
+    notes: "A real venue review",
+    visit_date: "2026-09-18",
+  };
+  saveReview(a, spot.id, review, key());
+  syncRewards(a);
+  syncRewards(a);
+  assert.equal(progress(a.id).xp, 20);
+  assert.equal(progress(a.id).coins, 10);
+  saveReview(a, spot.id, { ...review, notes: "Updated review" }, key());
+  syncRewards(a);
+  assert.equal(progress(a.id).xp, 20);
+  assert.equal(
+    rankings("daily", "users", "reviews").rows.find((r) => r.id === a.id)
+      ?.score,
+    1,
+  );
+  tick += 86400000;
+  saveReview(a, spot.id, review, key());
+  assert.equal(
+    rankings("daily", "users", "reviews").rows.some((r) => r.id === a.id),
+    false,
+  );
+});
+test("locked decorations reject direct requests and public profiles omit currency balances", () => {
+  code(
+    () => saveDecoration(a, { ...defaultDecoration, theme: "midnight" }, key()),
+    "DECORATION_LOCKED",
+  );
+  code(() => buyCosmetic(a, "theme:midnight", key()), "LEVEL_REQUIRED");
+  saveDecoration(
+    a,
+    { ...defaultDecoration, bio: "My reading corner", leaderboard: false },
+    key(),
+  );
+  const profile = publicProfile(a.handle);
+  assert.equal(profile.decoration.bio, "My reading corner");
+  assert.equal("coins" in profile.progress, false);
+});
+test("rank windows use Denver calendar boundaries across daylight saving time", () => {
+  assert.equal(
+    rankWindow("daily", Date.parse("2026-03-08T22:00:00Z")).start,
+    Date.parse("2026-03-08T07:00:00Z"),
+  );
+  assert.equal(rankWindow("weekly", tick).day, "2026-09-14");
+  assert.equal(rankWindow("monthly", tick).day, "2026-09-01");
+});
+test("map destinations preserve actual coordinates and encode addresses", () => {
+  const mapped = directions({
+    name: "Test place",
+    mapped: 1,
+    lat: 39.75,
+    lng: -105.22,
+    address: "Golden & Main",
+  });
+  assert.ok(mapped.google.includes("39.75"));
+  assert.ok(mapped.apple.includes("-105.22"));
+  const address = directions({
+    name: "Test place",
+    mapped: 0,
+    lat: 0,
+    lng: 0,
+    address: "Golden & Main",
+  });
+  assert.ok(
+    address.google.includes("Golden%20%26%20Main") ||
+      address.google.includes("Golden+%26+Main"),
+  );
+});
+
+const { applySubscription, premiumFor } = await import("../src/server/billing");
+const { reserveAiCall } = await import("../src/server/assistant");
+test("subscription replay, ownership and expiry cannot grant unauthorized Premium", () => {
+  process.env.STRIPE_PRICE_ID = "test-price";
+  run(
+    "INSERT INTO subscriptions(user_id,customer_id,status,updated_at) VALUES(?,?,'inactive',?)",
+    a.id,
+    "test-customer",
+    tick,
+  );
+  const event = {
+    eventId: key(),
+    userId: a.id,
+    customerId: "test-customer",
+    subscriptionId: "test-sub",
+    status: "active",
+    periodEnd: tick + 60000,
+    priceId: "test-price",
+  };
+  code(
+    () => applySubscription({ ...event, customerId: "wrong" }),
+    "BILLING_OWNER",
+  );
+  applySubscription(event);
+  assert.equal(premiumFor(a.id), true);
+  applySubscription({ ...event, status: "canceled" });
+  assert.equal(premiumFor(a.id), true);
+  tick += 60001;
+  assert.equal(premiumFor(a.id), false);
+  applySubscription({
+    ...event,
+    eventId: key(),
+    priceId: "wrong",
+    periodEnd: tick + 60000,
+  });
+  assert.equal(premiumFor(a.id), false);
+  delete process.env.STRIPE_PRICE_ID;
+});
+test("AI rejects nonmembers before use and enforces the shared owner allowance", () => {
+  code(() => reserveAiCall(a), "PREMIUM_REQUIRED");
+  process.env.AI_API_KEY = "test-only-not-a-real-key";
+  process.env.AI_MODEL = "test-model";
+  process.env.AI_DAILY_CALL_LIMIT = "1";
+  try {
+    run(
+      "INSERT INTO subscriptions(user_id,status,period_end,updated_at) VALUES(?,'active',?,?)",
+      a.id,
+      tick + 60000,
+      tick,
+    );
+    reserveAiCall(a);
+    code(() => reserveAiCall(a), "AI_LIMIT");
+  } finally {
+    delete process.env.AI_API_KEY;
+    delete process.env.AI_MODEL;
+    delete process.env.AI_DAILY_CALL_LIMIT;
+  }
 });

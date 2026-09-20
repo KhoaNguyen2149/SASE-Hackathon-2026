@@ -2,7 +2,7 @@ node_modules/
 .next/
 .next-e2e/
 out/
-data/
+/data/
 .env*
 !.env.example
 *.tsbuildinfo

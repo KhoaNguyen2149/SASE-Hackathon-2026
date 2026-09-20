@@ -1,5 +1,6 @@
 "use client";
 import Link from "next/link";
+import { VenuePhoto, PhotoCredit } from "./venue-photo";
 import {
   ArrowUpRight,
   Coffee,
@@ -10,7 +11,7 @@ import {
   Wifi,
   Zap,
 } from "lucide-react";
-import type { SpotSummary } from "@/lib/types";
+import type { DirectorySpot } from "@/lib/types";
 import { useApp } from "./provider";
 import { noiseLabels, crowdLabels } from "./ui";
 export const categoryNames: Record<string, string> = {
@@ -26,7 +27,7 @@ export function SpotCard({
   compact = false,
   onHover,
 }: {
-  spot: SpotSummary;
+  spot: DirectorySpot;
   compact?: boolean;
   onHover?: (id: string) => void;
 }) {
@@ -43,7 +44,7 @@ export function SpotCard({
         tabIndex={-1}
         aria-hidden="true"
       >
-        <img src={`/illustrations/${spot.image}.svg`} alt="" />
+        <VenuePhoto spot={spot} />
         <span className="image-category">{categoryNames[spot.category]}</span>
       </Link>
       <button
@@ -64,6 +65,7 @@ export function SpotCard({
       >
         <Heart size={18} fill={spot.saved ? "currentColor" : "none"} />
       </button>
+      <PhotoCredit spot={spot} />
       <div className="spot-card-content">
         <div className="spot-meta">
           <span className={`open-label ${spot.open === false ? "closed" : ""}`}>

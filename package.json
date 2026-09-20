@@ -19,17 +19,20 @@
     "worker": "node --env-file-if-exists=.env.local --import tsx scripts/worker.ts",
     "check": "npm run typecheck && npm run lint && npm test && npm run build",
     "format": "prettier --write \"src/**/*.{ts,tsx,css}\" \"scripts/*.{ts,mjs}\" \"tests/**/*.ts\"",
-    "test:production": "node scripts/production-smoke.mjs"
+    "test:production": "node scripts/production-smoke.mjs",
+    "test:firebase": "node --env-file=.env.local --import tsx scripts/firebase-smoke.ts"
   },
   "dependencies": {
     "@fontsource/manrope": "^5.3.0",
-    "google-auth-library": "^11.1.0",
+    "firebase": "^12.19.0",
+    "firebase-admin": "^14.4.0",
     "leaflet": "^1.9.4",
     "lucide-react": "^1.47.0",
     "next": "^16.3.5",
     "nodemailer": "^10.0.10",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
+    "stripe": "^22.6.2",
     "zod": "^4.6.5"
   },
   "devDependencies": {
@@ -45,5 +48,10 @@
     "prettier": "^3.9.8",
     "tsx": "^4.23.13",
     "typescript": "^6.0.3"
+  },
+  "overrides": {
+    "gaxios@6.7.1": {
+      "uuid": "^11.1.1"
+    }
   }
 }

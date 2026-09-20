@@ -1,8 +1,24 @@
+import { aiEnabled, assist } from "@/server/assistant";
 import { NextRequest, NextResponse } from "next/server";
 import { z, ZodError } from "zod";
-import { googleEnabled } from "@/server/google-auth";
+import {
+  firebaseConfig,
+  firebaseSession,
+  deleteManagedAccount,
+} from "@/server/firebase";
+import {
+  billingEnabled,
+  premiumFor,
+  checkout,
+  billingPortal,
+} from "@/server/billing";
+import { progress, syncRewards, buyCosmetic } from "@/server/rewards";
 import { rankings } from "@/server/rankings";
-import { decoration,decorationSchema,saveDecoration } from "@/server/profiles";
+import {
+  decoration,
+  decorationSchema,
+  saveDecoration,
+} from "@/server/profiles";
 import * as auth from "@/server/auth";
 import * as catalog from "@/server/catalog";
 import * as booking from "@/server/booking";
@@ -72,7 +88,7 @@ async function handler(
       );
     }
     const token = req.cookies.get(auth.cookieName)?.value;
-    const user = auth.currentUser(token);
+    const user = await auth.authenticatedUser(token);
     const needUser = (): User => {
       assert(user, "UNAUTHENTICATED", "Sign in to continue.", 401);
       return user;
@@ -104,6 +120,7 @@ async function handler(
         one("SELECT 1");
         result = { status: "ok" };
       } else if (route === "bootstrap") {
+        if (user) syncRewards(user);
         processOutbox();
         result = {
           user,
@@ -114,7 +131,12 @@ async function handler(
           serverTime: Date.now(),
           demo: !!one("SELECT 1 FROM spots WHERE demo=1 AND published=1"),
           emailEnabled: auth.emailEnabled(),
-          googleEnabled:googleEnabled(),
+          premium: user ? premiumFor(user.id) : false,
+          billingEnabled: billingEnabled(),
+          aiEnabled: aiEnabled(),
+          googleEnabled: !!firebaseConfig(),
+          firebase: firebaseConfig(),
+          progress: user ? progress(user.id) : null,
         };
       } else if (route === "spots") {
         const start = Number(
@@ -131,10 +153,11 @@ async function handler(
           400,
         );
         result = {
-          spots: catalog.listSpots(user?.id).map((s) => ({
-            ...s,
-            open: catalog.isOpen(s, start, start + duration * 60000),
-          })),
+          spots: catalog
+            .listSpots(user?.id)
+            .map((s) =>
+              catalog.directorySpot(s, start, start + duration * 60000),
+            ),
         };
       } else if (path[0] === "spots" && path.length === 2)
         result = catalog.detail(path[1], user?.id);
@@ -156,8 +179,19 @@ async function handler(
           params.party,
           user?.id,
         );
-      } else if (route === "rankings") { const query=z.object({period:z.enum(['daily','weekly','monthly']).default('weekly'),kind:z.enum(['spots','users']).default('spots'),metric:z.enum(['trending','rating','points','reviews','followers']).default('trending')}).parse(Object.fromEntries(req.nextUrl.searchParams));result=rankings(query.period,query.kind,query.metric,user?.id); }
-      else if(route==='profile/decoration')result={decoration:decoration(needUser().id)};
+      } else if (route === "rankings") {
+        const query = z
+          .object({
+            period: z.enum(["daily", "weekly", "monthly"]).default("weekly"),
+            kind: z.enum(["spots", "users"]).default("spots"),
+            metric: z
+              .enum(["trending", "rating", "points", "reviews", "followers"])
+              .default("trending"),
+          })
+          .parse(Object.fromEntries(req.nextUrl.searchParams));
+        result = rankings(query.period, query.kind, query.metric, user?.id);
+      } else if (route === "profile/decoration")
+        result = { decoration: decoration(needUser().id) };
       else if (route === "bookings")
         result = { bookings: booking.bookings(needUser().id) };
       else if (route === "study/history")
@@ -174,11 +208,44 @@ async function handler(
         throw new AppError(404, "NOT_FOUND", "This page could not be found.");
     } else if (method === "POST") {
       if (path[0] === "auth") {
+        assert(
+          !firebaseConfig() ||
+            ![
+              "auth/register",
+              "auth/login",
+              "auth/forgot",
+              "auth/reset",
+              "auth/verify",
+              "auth/resend",
+            ].includes(route),
+          "MANAGED_AUTH_REQUIRED",
+          "Use the managed sign-in or recovery flow on the sign-in page.",
+          400,
+        );
         // Do not trust spoofable forwarded addresses for identity or authorization.
         const client =
           req.headers.get("x-forwarded-for")?.split(",")[0].trim() || "local";
         rateLimit(`auth-global:${hash(client)}`, 100, 3600000);
-        if (route === "auth/register") {
+        if (route === "auth/firebase") {
+          const input = z
+            .object({
+              idToken: z.string().min(20).max(20000),
+              handle: z
+                .string()
+                .trim()
+                .toLowerCase()
+                .regex(/^[a-z0-9_]{3,24}$/)
+                .optional(),
+            })
+            .parse(body);
+          const signed = await firebaseSession(
+            input.idToken,
+            user,
+            input.handle,
+          );
+          cookie = signed.token;
+          result = { ok: true };
+        } else if (route === "auth/register") {
           const input = z
             .object({
               name: z.string().trim().min(2).max(60),
@@ -430,7 +497,23 @@ async function handler(
               .parse(body),
             key,
           );
-        else if(route==="profile/decoration")result=saveDecoration(actor,decorationSchema.parse(body),key);
+        else if (route === "assistant")
+          result = await assist(
+            actor,
+            z.object({ prompt: z.string().trim().min(3).max(1000) }).parse(body)
+              .prompt,
+          );
+        else if (route === "billing/checkout") result = await checkout(actor);
+        else if (route === "billing/portal")
+          result = await billingPortal(actor);
+        else if (route === "rewards/buy")
+          result = buyCosmetic(
+            actor,
+            z.object({ cosmeticId: z.string().max(60) }).parse(body).cosmeticId,
+            key,
+          );
+        else if (route === "profile/decoration")
+          result = saveDecoration(actor, decorationSchema.parse(body), key);
         else if (route === "settings")
           result = account.settings(
             actor,
@@ -446,9 +529,11 @@ async function handler(
         else if (route === "account/delete") {
           await auth.confirmPassword(
             actor,
-            z.object({ password: z.string().max(128).default("") }).parse(body).password,
+            z.object({ password: z.string().max(128).default("") }).parse(body)
+              .password,
             token,
           );
+          await deleteManagedAccount(actor, token);
           result = account.deleteAccount(actor);
           clearCookie = true;
         } else if (route === "notifications/read") {

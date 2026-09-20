@@ -1,4 +1,6 @@
-import { decoration,pinnedSpots } from "./profiles";
+import { progress } from "./rewards";
+import { premiumFor } from "./billing";
+import { decoration, pinnedSpots } from "./profiles";
 import { all, one, run } from "./db";
 import { getSpot, reviews } from "./catalog";
 import { assert } from "./errors";
@@ -29,7 +31,12 @@ export function saveReview(
       400,
     );
     const now = Date.now();
-    run("INSERT OR IGNORE INTO first_reviews VALUES(?,?,?)",user.id,spotId,now);
+    run(
+      "INSERT OR IGNORE INTO first_reviews VALUES(?,?,?)",
+      user.id,
+      spotId,
+      now,
+    );
     run(
       "INSERT INTO reviews(id,user_id,spot_id,rating,noise,crowd,notes,visit_date,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?,?) ON CONFLICT(user_id,spot_id) DO UPDATE SET rating=excluded.rating,noise=excluded.noise,crowd=excluded.crowd,notes=excluded.notes,visit_date=excluded.visit_date,updated_at=excluded.updated_at",
       id(),
@@ -167,10 +174,20 @@ export function publicProfile(handle: string, viewerId?: string) {
   );
   return {
     user,
-    decoration:decoration(user.id),
-    pinnedSpots:pinnedSpots(user.id),
-    followers:one<{n:number}>("SELECT COUNT(*) n FROM follows f JOIN users u ON u.id=f.user_id WHERE f.target_id=? AND u.suspended=0",user.id)!.n,
-    followingCount:one<{n:number}>("SELECT COUNT(*) n FROM follows f JOIN users u ON u.id=f.target_id WHERE f.user_id=? AND u.suspended=0",user.id)!.n,
+    decoration: decoration(user.id),
+    progress: (({ level, achievements }) => ({ level, achievements }))(
+      progress(user.id),
+    ),
+    premium: premiumFor(user.id),
+    pinnedSpots: pinnedSpots(user.id),
+    followers: one<{ n: number }>(
+      "SELECT COUNT(*) n FROM follows f JOIN users u ON u.id=f.user_id WHERE f.target_id=? AND u.suspended=0",
+      user.id,
+    )!.n,
+    followingCount: one<{ n: number }>(
+      "SELECT COUNT(*) n FROM follows f JOIN users u ON u.id=f.target_id WHERE f.user_id=? AND u.suspended=0",
+      user.id,
+    )!.n,
     following:
       !!viewerId &&
       !!one(

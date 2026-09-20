@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { useApp } from "./provider";
 import { AuthGate, Avatar, Badge, Modal, PageTitle } from "./ui";
+import { DecorationEditor } from "./profile-decoration";
 import { api, post } from "@/lib/client";
 export function Profile() {
   return (
@@ -25,6 +26,14 @@ export function Profile() {
         title="Make DeskHop feel like you."
         description="Your preferences, your privacy, your pace."
       />
+      <div className="button-row">
+        <Link className="button secondary" href="/rankings">
+          Community rankings
+        </Link>
+        <Link className="button secondary" href="/premium">
+          DeskHop Premium
+        </Link>
+      </div>
       <AuthGate>
         <ProfileContent />
       </AuthGate>
@@ -63,6 +72,7 @@ function ProfileContent() {
     <div className="profile-layout">
       <aside>
         <div className="card profile-identity">
+          {data?.premium && <span className="premium-badge">Premium</span>}
           <Avatar name={user.name} size="large" />
           <h2>{user.name}</h2>
           <p>@{user.handle}</p>
@@ -124,6 +134,17 @@ function ProfileContent() {
                 className="button secondary"
                 disabled={busy}
                 onClick={async () => {
+                  if (data?.firebase) {
+                    try {
+                      const { managedVerification } =
+                        await import("@/lib/firebase-client");
+                      await managedVerification(data.firebase, true);
+                      toast("Check your inbox for the verification link.");
+                    } catch (e) {
+                      toast((e as Error).message);
+                    }
+                    return;
+                  }
                   const result = await mutate<{ developmentLink?: string }>(
                     "auth/resend",
                     {},
@@ -136,6 +157,11 @@ function ProfileContent() {
                 <Mail size={17} />
                 Resend verification
               </button>
+              {data?.firebase && (
+                <Link className="text-link" href="/login?next=%2Fprofile">
+                  Verified your email? Sign in again to refresh it.
+                </Link>
+              )}
               {developmentLink && (
                 <div className="development-mail">
                   Local development link:{" "}
@@ -145,6 +171,7 @@ function ProfileContent() {
             </>
           )}
         </section>
+        {user.verified === 1 && <DecorationEditor />}
         <section className="card padded">
           <h2>A little control over your privacy</h2>
           <label className="check-card">
@@ -214,6 +241,11 @@ function ProfileContent() {
               onClick={async () => {
                 try {
                   await post("auth/logout");
+                  if (data?.firebase) {
+                    const { managedSignOut } =
+                      await import("@/lib/firebase-client");
+                    await managedSignOut(data.firebase);
+                  }
                   await refresh();
                   router.push("/discover");
                 } catch (e) {
@@ -267,16 +299,23 @@ function ProfileContent() {
               }
             }}
           >
-            <label className="field">
-              Confirm with your password
-              <input
-                type="password"
-                autoComplete="current-password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
-            </label>
+            {user.password_enabled !== 0 ? (
+              <label className="field">
+                Confirm with your password
+                <input
+                  type="password"
+                  autoComplete="current-password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                />
+              </label>
+            ) : (
+              <p className="notice-banner">
+                Deletion requires a sign-in within the last five minutes.{" "}
+                <Link href="/login?next=%2Fprofile">Sign in again</Link>
+              </p>
+            )}
             <div className="button-row">
               <button className="button danger" disabled={busy}>
                 Permanently delete account

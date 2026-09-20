@@ -197,8 +197,18 @@ export function relationship(
     if (action === "remove")
       run("DELETE FROM friendships WHERE a=? AND b=?", a, b);
     if (action === "follow") {
-      run("INSERT OR IGNORE INTO first_follows VALUES(?,?,?)",user.id,target.id,Date.now());
-      run("INSERT OR IGNORE INTO follows(user_id,target_id,created_at) VALUES(?,?,?)",user.id,target.id,Date.now());
+      run(
+        "INSERT OR IGNORE INTO first_follows VALUES(?,?,?)",
+        user.id,
+        target.id,
+        Date.now(),
+      );
+      run(
+        "INSERT OR IGNORE INTO follows(user_id,target_id,created_at) VALUES(?,?,?)",
+        user.id,
+        target.id,
+        Date.now(),
+      );
     }
     if (action === "unfollow")
       run(

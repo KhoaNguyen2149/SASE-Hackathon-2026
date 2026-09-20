@@ -23,7 +23,7 @@ import { useApp, useResource } from "./provider";
 import { Empty, ErrorState, Loading, Modal, PageTitle } from "./ui";
 import { SpotCard } from "./spot-card";
 import { HeroArt } from "./hero-art";
-import type { SpotSummary } from "@/lib/types";
+import type { DirectorySpot } from "@/lib/types";
 const SpotMap = dynamic(() => import("./map"), {
   ssr: false,
   loading: () => <Loading />,
@@ -59,6 +59,9 @@ export function Discover({ saved = false }: { saved?: boolean }) {
   const catalogMode = params.get("catalog") === "sample" ? "sample" : "real";
   const { data: app, toast } = useApp();
   const [query, setQuery] = useState(""),
+    [city, setCity] = useState(""),
+    [photosOnly, setPhotosOnly] = useState(false),
+    [pageLimit, setPageLimit] = useState({ key: "", count: 48 }),
     [category, setCategory] = useState("all"),
     [filters, setFilters] = useState<Filters>(initial),
     [view, setView] = useState("grid"),
@@ -74,7 +77,7 @@ export function Discover({ saved = false }: { saved?: boolean }) {
     [smart, setSmart] = useState(false),
     [smartText, setSmartText] = useState(""),
     [smartExplanation, setSmartExplanation] = useState("");
-  const { data, error, loading } = useResource<{ spots: SpotSummary[] }>(
+  const { data, error, loading } = useResource<{ spots: DirectorySpot[] }>(
     `spots?duration=${duration}`,
   );
   const spots = useMemo(() => {
@@ -84,6 +87,8 @@ export function Discover({ saved = false }: { saved?: boolean }) {
           (!saved || s.saved) &&
           (saved || (catalogMode === "sample" ? !!s.demo : !s.demo)) &&
           (category === "all" || category === s.category) &&
+          (!city || s.city === city) &&
+          (!photosOnly || !!s.photo_url) &&
           (!query ||
             `${s.name} ${s.description} ${s.address} ${s.category}`
               .toLowerCase()
@@ -118,7 +123,8 @@ export function Discover({ saved = false }: { saved?: boolean }) {
             : location
               ? a.distance! - b.distance!
               : Number(b.open) - Number(a.open) ||
-                (a.noise || 6) - (b.noise || 6),
+                (a.noise || 6) - (b.noise || 6) ||
+                Number(!!b.verified_at) - Number(!!a.verified_at),
     );
     return list;
   }, [
@@ -131,7 +137,28 @@ export function Discover({ saved = false }: { saved?: boolean }) {
     location,
     radius,
     catalogMode,
+    city,
+    photosOnly,
   ]);
+  const mappedSpots = useMemo(() => spots.filter((s) => s.mapped), [spots]);
+  const resultKey = JSON.stringify([
+    query,
+    category,
+    filters,
+    sort,
+    location,
+    radius,
+    catalogMode,
+    city,
+    photosOnly,
+  ]);
+  const shown = pageLimit.key === resultKey ? pageLimit.count : 48;
+  const visibleSpots = spots.slice(0, shown);
+  const cities = [
+    ...new Set(
+      (data?.spots || []).filter((s) => !s.demo && s.city).map((s) => s.city!),
+    ),
+  ].sort();
   const activeCount = Object.entries(filters).filter(([key, value]) =>
     key === "group" ? Number(value) > 1 : !!value,
   ).length;
@@ -153,7 +180,9 @@ export function Discover({ saved = false }: { saved?: boolean }) {
       },
       () => {
         setLocating(false);
-        toast("Location wasn’t available. You can still browse around Golden.");
+        toast(
+          "Location wasn’t available. You can still browse across Colorado.",
+        );
       },
       { timeout: 10000, maximumAge: 300000 },
     );
@@ -223,7 +252,7 @@ export function Discover({ saved = false }: { saved?: boolean }) {
             <div className="hero-location">
               <MapPinIcon />
               <span>
-                Exploring <strong>Golden, Colorado</strong>
+                Exploring <strong>Colorado</strong>
               </span>
               <span className="location-divider" />
               <button onClick={locate} disabled={locating}>
@@ -249,7 +278,7 @@ export function Discover({ saved = false }: { saved?: boolean }) {
                 setFilters(initial);
               }}
             >
-              Golden venues
+              Colorado venues
             </button>
             <button
               className={catalogMode === "sample" ? "active" : ""}
@@ -263,7 +292,7 @@ export function Discover({ saved = false }: { saved?: boolean }) {
           </div>
           <p>
             {catalogMode === "real"
-              ? "Sourced from venue websites. Unverified amenities stay unknown."
+              ? "OpenStreetMap and venue sources. Confirm access and study amenities before visiting."
               : "Fictional spots with demo rooms to try the complete booking flow."}
           </p>
         </div>
@@ -302,6 +331,42 @@ export function Discover({ saved = false }: { saved?: boolean }) {
             Coffee & study<span>Find your favorite corner</span>
           </button>
         </section>
+      )}
+      {!saved && catalogMode === "real" && (
+        <div className="directory-controls">
+          <label className="field">
+            City or town
+            <select value={city} onChange={(e) => setCity(e.target.value)}>
+              <option value="">All Colorado</option>
+              {cities.map((c) => (
+                <option key={c}>{c}</option>
+              ))}
+            </select>
+          </label>
+          <label className="photo-filter">
+            <input
+              type="checkbox"
+              checked={photosOnly}
+              onChange={(e) => setPhotosOnly(e.target.checked)}
+            />{" "}
+            With location photos
+          </label>
+          <p className="fine-print">
+            {(data?.spots || []).filter((s) => !s.demo).length.toLocaleString()}{" "}
+            mapped and sourced places. Some records have no city tag; choose All
+            Colorado to include them.{" "}
+            <a download href="/api/catalog/download">
+              Download open map data
+            </a>{" "}
+            <a
+              href="https://www.openstreetmap.org/copyright"
+              target="_blank"
+              rel="noreferrer"
+            >
+              Copyright OpenStreetMap contributors - ODbL
+            </a>
+          </p>
+        </div>
       )}
       <div className="discovery-search">
         <label className="search-box">
@@ -465,6 +530,8 @@ export function Discover({ saved = false }: { saved?: boolean }) {
                   setCategory("all");
                   setQuery("");
                   setLocation(null);
+                  setCity("");
+                  setPhotosOnly(false);
                 }}
               >
                 Reset search
@@ -491,20 +558,20 @@ export function Discover({ saved = false }: { saved?: boolean }) {
         </Empty>
       ) : view === "grid" ? (
         <div className="spot-grid">
-          {spots.map((s) => (
+          {visibleSpots.map((s) => (
             <SpotCard key={s.id} spot={s} />
           ))}
         </div>
       ) : (
         <div className="map-results">
           <div className="map-result-list">
-            {spots.map((s) => (
+            {visibleSpots.map((s) => (
               <SpotCard key={s.id} spot={s} compact onHover={setSelected} />
             ))}
           </div>
           <div className="map-sticky">
             <SpotMap
-              spots={spots.filter((s) => s.mapped)}
+              spots={mappedSpots}
               selected={selected}
               onSelect={setSelected}
             />
@@ -523,6 +590,20 @@ export function Discover({ saved = false }: { saved?: boolean }) {
               </div>
             )}
           </div>
+        </div>
+      )}
+      {spots.length > shown && (
+        <div className="load-more">
+          <p>
+            Showing {shown} of {spots.length.toLocaleString()} matching spots.
+            The map includes all matches with coordinates.
+          </p>
+          <button
+            className="button secondary"
+            onClick={() => setPageLimit({ key: resultKey, count: shown + 48 })}
+          >
+            Show 48 more
+          </button>
         </div>
       )}
       {!saved && (

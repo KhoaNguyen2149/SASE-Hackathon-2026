@@ -1,6 +1,6 @@
 # Catalog provenance
 
-The first area is Golden, Colorado. It was chosen as a small initial directory alongside the supplied campus-oriented product brief. This is not a claim of a university or venue partnership.
+The curated pilot area is Golden, Colorado. Statewide discovery also includes 5,073 OpenStreetMap records from the September 19, 2026 snapshot in `src/data/colorado.json`. It was chosen as a small initial directory alongside the supplied campus-oriented product brief. This is not a claim of a university or venue partnership.
 
 ## Real entries
 
@@ -26,3 +26,9 @@ Aspen Reading Room, Juniper & Co., The Study Hall, Clear Creek Corner, Paper & P
 Use Administration to revise fields and source notes, verification date, holidays, and publication status. Maintain unknown values until there is supporting evidence. Only check coordinates verified after checking the actual venue location. Record venue permission before adding native real-world inventory; external booking links remain independent workflows.
 
 Review schedules weekly and after a correction request. The application does not crawl or automatically re-verify sources. Website-sourced facts can become stale between checks.
+
+## Statewide sources and photographs
+
+The OSM snapshot is distributed under ODbL 1.0 with attribution and downloadable source data at `/api/catalog/download`. Community map coordinates are not inspected entrances. Unknown amenities, access, and opening hours are not inferred. A listed park or community space is not necessarily suitable for studying.
+
+36 records have Wikimedia Commons photos. `scripts/enrich-photos.py` retrieves source-linked Wikidata/Commons image metadata, applies geographic and license filters, and preserves image/source/artist/license fields. Credits and the original file page appear beside each displayed photo; images may show older conditions. Missing images have explicit placeholders. No Google Places photos are copied or billed. Additional venue photos require source matching and reuse permission or an appropriately licensed provider integration.

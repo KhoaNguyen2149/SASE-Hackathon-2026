@@ -395,3 +395,61 @@ test("real catalog is the default and registration returns to the selected study
   );
   await removeUser(context);
 });
+
+test("statewide photo filtering, map selection, attribution and directions work", async ({
+  page,
+}) => {
+  await page.goto("/discover");
+  await page.getByLabel("With location photos").check();
+  const card = page.locator(".spot-card").first();
+  await expect(card.locator("img")).toHaveAttribute(
+    "src",
+    /^https:\/\/(upload|thumb)\.wikimedia\.org\//,
+  );
+  await expect(card.locator(".photo-credit a")).toHaveAttribute(
+    "href",
+    /^https:\/\/commons\.wikimedia\.org/,
+  );
+  await page.getByRole("button", { name: "Map view", exact: true }).click();
+  await expect(page.locator(".leaflet-container")).toBeVisible();
+  await page.locator(".spot-card").first().hover();
+  await expect(page.locator(".map-preview")).toBeVisible();
+  await page.locator(".spot-name").first().click();
+  await expect(page.locator(".detail-hero-image img")).toHaveAttribute(
+    "src",
+    /^https:\/\/(upload|thumb)\.wikimedia\.org\//,
+  );
+  await expect(page.getByRole("link", { name: /Google Maps/ })).toHaveAttribute(
+    "href",
+    /google\.com\/maps/,
+  );
+  await expect(page.getByRole("link", { name: /Apple Maps/ })).toHaveAttribute(
+    "href",
+    /maps\.apple\.com/,
+  );
+});
+
+test("profile appearance persists publicly and membership stays unavailable without billing", async ({page,context,request}) => {
+  const user = await makeUser(context);
+  try {
+    await page.goto("/profile");
+    await page.getByLabel("About you", {exact:false}).fill("Library afternoons and mountain mornings.");
+    await page.getByRole("button",{name:"Save profile appearance"}).click();
+    await expect(page.getByRole("status")).toContainText("Your public corner is updated.");
+    const publicResponse = await request.get(`/api/profiles/${user.handle}`);
+    expect(publicResponse.ok()).toBeTruthy();
+    const publicData = (await publicResponse.json()).data;
+    expect(publicData.decoration.bio).toBe("Library afternoons and mountain mornings.");
+    expect(publicData.progress.coins).toBeUndefined();
+    await page.reload();
+    await expect(page.getByLabel("About you", {exact:false})).toHaveValue("Library afternoons and mountain mornings.");
+    await page.getByRole("link",{name:"Community rankings",exact:true}).click();
+    await page.getByRole("button",{name:"Community",exact:true}).click();
+    await page.getByRole("button",{name:"Today",exact:true}).click();
+    await expect(page.getByRole("button",{name:"Today",exact:true})).toHaveAttribute("aria-pressed","true");
+    await page.goto("/premium");
+    await expect(page.getByRole("button",{name:"Premium checkout is not open yet"})).toBeDisabled();
+    await page.setViewportSize({width:390,height:844});
+    await noOverflow(page);
+  } finally { await removeUser(context); }
+});
