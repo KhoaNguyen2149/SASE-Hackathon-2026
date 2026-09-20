@@ -10,13 +10,18 @@ import { friends, hash, rateLimit, requireVerified } from "./shared";
 import type { User } from "@/lib/types";
 export const spotifyEnabled = () =>
   !!process.env.SPOTIFY_CLIENT_ID && !!process.env.SPOTIFY_CLIENT_SECRET;
-const origin = () =>
+/**
+ * The app's own public address. Never derived from the request: behind a proxy
+ * the request resolves to the bind address (0.0.0.0:10000 on Render), which
+ * would send people to a host their browser cannot reach.
+ */
+export const appOrigin = () =>
   new URL(
     process.env.APP_URL ||
       process.env.RENDER_EXTERNAL_URL ||
       "http://127.0.0.1:3000",
   ).origin;
-export const redirectUri = () => origin() + "/api/spotify/callback";
+export const redirectUri = () => appOrigin() + "/api/spotify/callback";
 // Only what is needed to name a track; playback control is never requested.
 const scope = "user-read-currently-playing";
 const cacheMs = 45000;

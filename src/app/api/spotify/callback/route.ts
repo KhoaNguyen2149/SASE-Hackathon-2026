@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
-import { completeConnect, spotifyEnabled } from "@/server/spotify";
+import { appOrigin, completeConnect, spotifyEnabled } from "@/server/spotify";
 import { AppError } from "@/server/errors";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 // Spotify sends the person back here, so this answers with a redirect rather
 // than the JSON the rest of the API returns.
 export async function GET(req: NextRequest) {
-  const origin = req.nextUrl.origin;
+  // The same origin that was registered with Spotify, not the request's.
+  const origin = appOrigin();
   const back = (path: string, note?: string) =>
     NextResponse.redirect(
       origin + path + (note ? "?spotify=" + encodeURIComponent(note) : ""),
