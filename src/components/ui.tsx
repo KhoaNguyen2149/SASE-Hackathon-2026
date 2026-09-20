@@ -131,14 +131,26 @@ export function Badge({
 }) {
   return <span className={`badge ${tone}`}>{children}</span>;
 }
-export function Avatar({ name, size = "" }: { name: string; size?: string }) {
+export function Avatar({
+  name,
+  size = "",
+  src,
+}: {
+  name: string;
+  size?: string;
+  src?: string | null;
+}) {
   return (
     <span className={`avatar ${size}`} aria-hidden="true">
-      {name
-        .split(" ")
-        .map((x) => x[0])
-        .slice(0, 2)
-        .join("")}
+      {src ? (
+        <img src={src} alt="" decoding="async" />
+      ) : (
+        name
+          .split(" ")
+          .map((x) => x[0])
+          .slice(0, 2)
+          .join("")
+      )}
     </span>
   );
 }

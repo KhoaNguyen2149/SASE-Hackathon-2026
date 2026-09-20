@@ -1,13 +1,33 @@
 import { decoration } from "./profiles";
 import { all, one, run, transaction } from "./db";
-import { command } from "./shared";
+import { command, rateLimit } from "./shared";
+import { assert } from "./errors";
+import { handleHint, handlePattern } from "@/lib/handle";
 import type { User } from "@/lib/types";
 export function settings(
   user: User,
-  input: { name: string; sharing: boolean; notify: boolean },
+  input: {
+    name: string;
+    sharing: boolean;
+    notify: boolean;
+    handle?: string;
+  },
   key: string | null,
 ) {
   return command(user.id, "settings", key, input, () => {
+    const handle = input.handle?.trim().toLowerCase();
+    if (handle && handle !== user.handle.toLowerCase()) {
+      assert(handlePattern.test(handle), "INVALID_HANDLE", handleHint, 400);
+      // Handles are the address of a public profile, so churn stays bounded.
+      rateLimit(`handle:${user.id}`, 5, 86400000);
+      assert(
+        !one("SELECT 1 FROM users WHERE handle=? AND id!=?", handle, user.id),
+        "HANDLE_TAKEN",
+        "That handle is already taken. Try another one.",
+        409,
+      );
+      run("UPDATE users SET handle=? WHERE id=?", handle, user.id);
+    }
     run(
       "UPDATE users SET name=?,sharing=?,notify=? WHERE id=?",
       input.name,

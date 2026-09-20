@@ -41,9 +41,17 @@ export function DecoratedIdentity({
       <div className="decorated-body">
         <div
           className={`decorated-avatar border-${decoration.border || "plain"}`}
-          aria-label={decoration.avatar + " avatar"}
+          aria-label={
+            decoration.avatar_url
+              ? "Profile picture"
+              : decoration.avatar + " avatar"
+          }
         >
-          {glyphs[decoration.avatar]}
+          {decoration.avatar_url ? (
+            <img src={decoration.avatar_url} alt="" decoding="async" />
+          ) : (
+            glyphs[decoration.avatar]
+          )}
         </div>
         <div>
           <div className="identity-title">
@@ -111,7 +119,8 @@ function Editor({ initial }: { initial: ProfileDecoration }) {
       <DecoratedIdentity
         name={app?.user?.name || "Your name"}
         handle={app?.user?.handle || "you"}
-        decoration={draft}
+        // The picture is saved on its own, so the preview reads it live.
+        decoration={{ ...draft, avatar_url: app?.avatarUrl || "" }}
         level={p?.level}
       />
       <label className="field">

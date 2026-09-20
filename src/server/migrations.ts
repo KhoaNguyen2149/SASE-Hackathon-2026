@@ -41,6 +41,7 @@ export function migrateSocial(db: DatabaseSync) {
       INSERT OR IGNORE INTO schema_migrations VALUES(3,unixepoch()*1000);
     `);
     add("profiles", "border", "TEXT NOT NULL DEFAULT 'plain'");
+    add("profiles", "avatar_url", "TEXT NOT NULL DEFAULT ''");
     db.exec("COMMIT");
   } catch (e) {
     db.exec("ROLLBACK");

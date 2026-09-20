@@ -31,12 +31,13 @@ export function rankings(
       handle: string;
       theme: string;
       avatar: string;
+      avatar_url: string;
       reviews: number;
       followers: number;
       score: number;
     }>(
       `
-      SELECT u.id,u.name,u.handle,COALESCE(p.theme,'forest') theme,COALESCE(p.avatar,'seedling') avatar,
+      SELECT u.id,u.name,u.handle,COALESCE(p.theme,'forest') theme,COALESCE(p.avatar,'seedling') avatar,COALESCE(p.avatar_url,'') avatar_url,
       (SELECT COUNT(*) FROM reviews r JOIN first_reviews fr ON fr.user_id=r.user_id AND fr.spot_id=r.spot_id JOIN spots s ON s.id=r.spot_id WHERE r.user_id=u.id AND r.hidden=0 AND s.demo=0 AND s.published=1 AND fr.created_at>=? AND fr.created_at<=?) reviews,
       (SELECT COUNT(*) FROM first_follows ff JOIN follows f ON f.user_id=ff.user_id AND f.target_id=ff.target_id JOIN users fan ON fan.id=ff.user_id WHERE ff.target_id=u.id AND ff.created_at>=? AND ff.created_at<=? AND fan.verified=1 AND fan.suspended=0 AND NOT EXISTS(SELECT 1 FROM blocks b WHERE (b.user_id=fan.id AND b.target_id=u.id) OR (b.target_id=fan.id AND b.user_id=u.id))) followers
       FROM users u LEFT JOIN profiles p ON p.user_id=u.id WHERE u.verified=1 AND u.suspended=0 AND COALESCE(p.leaderboard,1)=1 AND NOT EXISTS(SELECT 1 FROM blocks b WHERE (b.user_id=? AND b.target_id=u.id) OR (b.target_id=? AND b.user_id=u.id))`,

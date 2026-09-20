@@ -133,7 +133,7 @@ export function Shell({ children }: { children: ReactNode }) {
           </div>
           {data?.user ? (
             <Link className="account-link" href="/profile">
-              <Avatar name={data.user.name} />
+              <Avatar name={data.user.name} src={data.avatarUrl} />
               <span>
                 <strong>{data.user.name}</strong>
                 <small>@{data.user.handle}</small>
@@ -176,7 +176,11 @@ export function Shell({ children }: { children: ReactNode }) {
                   )}
                 </button>
                 <Link href="/profile" aria-label="Your profile">
-                  <Avatar name={data.user.name} size="small" />
+                  <Avatar
+                    name={data.user.name}
+                    size="small"
+                    src={data.avatarUrl}
+                  />
                 </Link>
               </>
             ) : (

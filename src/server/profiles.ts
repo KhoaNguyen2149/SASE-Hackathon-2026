@@ -1,8 +1,9 @@
 import { progress } from "./rewards";
 import { z } from "zod";
 import { all, one, run } from "./db";
-import { command, requireVerified } from "./shared";
+import { command, rateLimit, requireVerified } from "./shared";
 import { assert } from "./errors";
+import { avatarPattern, maxAvatarDataUrl } from "@/lib/avatar";
 import {
   themes,
   banners,
@@ -24,10 +25,26 @@ export const decorationSchema = z.object({
   interests: z.array(z.enum(interestOptions)).max(5),
   leaderboard: z.boolean(),
 });
+// The picture has its own command: it is uploaded on its own, and its payload
+// is far larger than the rest of the decoration.
+export type DecorationInput = Omit<ProfileDecoration, "avatar_url">;
+export const avatarUrlSchema = z
+  .string()
+  .max(maxAvatarDataUrl)
+  .regex(avatarPattern, "Upload a JPEG, PNG, or WebP image.")
+  .or(z.literal(""));
+const signatures: Record<string, (bytes: Buffer) => boolean> = {
+  "image/jpeg": (b) => b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff,
+  "image/png": (b) => b.subarray(0, 8).toString("hex") === "89504e470d0a1a0a",
+  "image/webp": (b) =>
+    b.subarray(0, 4).toString("latin1") === "RIFF" &&
+    b.subarray(8, 12).toString("latin1") === "WEBP",
+};
 export function decoration(userId: string): ProfileDecoration {
   const row = one<{
     border: string;
     bio: string;
+    avatar_url: string;
     theme: string;
     banner: string;
     avatar: string;
@@ -39,6 +56,7 @@ export function decoration(userId: string): ProfileDecoration {
   return row
     ? {
         border: row.border,
+        avatar_url: row.avatar_url || "",
         bio: row.bio,
         theme: row.theme,
         banner: row.banner,
@@ -52,7 +70,7 @@ export function decoration(userId: string): ProfileDecoration {
 }
 export function saveDecoration(
   user: User,
-  input: ProfileDecoration,
+  input: DecorationInput,
   key: string | null,
 ) {
   requireVerified(user);
@@ -86,6 +104,43 @@ export function saveDecoration(
       Number(input.leaderboard),
       Date.now(),
       input.border,
+    );
+    return { decoration: decoration(user.id) };
+  });
+}
+export function avatarUrl(userId: string) {
+  return (
+    one<{ avatar_url: string }>(
+      "SELECT avatar_url FROM profiles WHERE user_id=?",
+      userId,
+    )?.avatar_url || ""
+  );
+}
+export function saveAvatar(
+  user: User,
+  input: { avatar_url: string },
+  key: string | null,
+) {
+  requireVerified(user);
+  return command(user.id, "profile:avatar", key, input, () => {
+    if (input.avatar_url) {
+      // Trust the declared media type only as far as the bytes agree with it.
+      const [header, payload] = input.avatar_url.split(",");
+      const bytes = Buffer.from(payload, "base64");
+      const [type] = Object.keys(signatures).filter((t) => header.includes(t));
+      assert(
+        type && signatures[type](bytes),
+        "INVALID_IMAGE",
+        "That file is not a readable JPEG, PNG, or WebP image.",
+        400,
+      );
+      rateLimit(`avatar:${user.id}`, 20, 3600000);
+    }
+    run(
+      `INSERT INTO profiles(user_id,avatar_url,updated_at) VALUES(?,?,?) ON CONFLICT(user_id) DO UPDATE SET avatar_url=excluded.avatar_url,updated_at=excluded.updated_at`,
+      user.id,
+      input.avatar_url,
+      Date.now(),
     );
     return { decoration: decoration(user.id) };
   });

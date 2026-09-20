@@ -824,7 +824,8 @@ test("administration rejects a normal verified user and accepts an audited catal
 const { syncRewards, progress, buyCosmetic } =
   await import("../src/server/rewards");
 const { rankWindow, rankings } = await import("../src/server/rankings");
-const { saveDecoration } = await import("../src/server/profiles");
+const { saveDecoration, saveAvatar, avatarUrl } =
+  await import("../src/server/profiles");
 const { defaultDecoration } = await import("../src/lib/profile-style");
 const { publicProfile } = await import("../src/server/community");
 const { directions } = await import("../src/lib/directions");
@@ -962,4 +963,71 @@ test("AI rejects nonmembers before use and enforces the shared owner allowance",
     delete process.env.AI_MODEL;
     delete process.env.AI_DAILY_CALL_LIMIT;
   }
+});
+test("a handle can be changed once it is free, well formed, and not someone else's", () => {
+  code(
+    () =>
+      settings(
+        a,
+        { name: a.name, handle: b.handle, sharing: true, notify: false },
+        key(),
+      ),
+    "HANDLE_TAKEN",
+  );
+  code(
+    () =>
+      settings(
+        a,
+        { name: a.name, handle: "no spaces!", sharing: true, notify: false },
+        key(),
+      ),
+    "INVALID_HANDLE",
+  );
+  settings(
+    a,
+    { name: a.name, handle: "Quiet_Corner", sharing: true, notify: false },
+    key(),
+  );
+  const moved = one<User>("SELECT * FROM users WHERE id=?", a.id)!;
+  assert.equal(moved.handle, "quiet_corner");
+  assert.equal(publicProfile("quiet_corner").user.id, a.id);
+  // Keeping your own handle is not a collision with yourself.
+  settings(
+    moved,
+    { name: moved.name, handle: "quiet_corner", sharing: true, notify: false },
+    key(),
+  );
+  assert.equal(
+    one<User>("SELECT * FROM users WHERE id=?", a.id)!.handle,
+    "quiet_corner",
+  );
+});
+test("a profile picture is stored only when its bytes match a real image", () => {
+  const png =
+    "data:image/png;base64," +
+    Buffer.from([
+      0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0x01,
+    ]).toString("base64");
+  code(
+    () =>
+      saveAvatar(
+        a,
+        {
+          avatar_url:
+            "data:image/png;base64," +
+            Buffer.from("<script>alert(1)</script>").toString("base64"),
+        },
+        key(),
+      ),
+    "INVALID_IMAGE",
+  );
+  assert.equal(avatarUrl(a.id), "");
+  saveAvatar(a, { avatar_url: png }, key());
+  assert.equal(avatarUrl(a.id), png);
+  assert.equal(publicProfile(a.handle).decoration.avatar_url, png);
+  // Decorating the rest of the profile leaves the picture alone.
+  saveDecoration(a, { ...defaultDecoration, bio: "Still here" }, key());
+  assert.equal(avatarUrl(a.id), png);
+  saveAvatar(a, { avatar_url: "" }, key());
+  assert.equal(avatarUrl(a.id), "");
 });

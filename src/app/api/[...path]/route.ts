@@ -15,8 +15,11 @@ import {
 import { progress, syncRewards, buyCosmetic } from "@/server/rewards";
 import { rankings } from "@/server/rankings";
 import {
+  avatarUrl,
+  avatarUrlSchema,
   decoration,
   decorationSchema,
+  saveAvatar,
   saveDecoration,
 } from "@/server/profiles";
 import * as auth from "@/server/auth";
@@ -27,6 +30,8 @@ import * as social from "@/server/social";
 import * as community from "@/server/community";
 import * as account from "@/server/account";
 import * as admin from "@/server/admin";
+import { maxAvatarDataUrl } from "@/lib/avatar";
+import { handleHint, handlePattern } from "@/lib/handle";
 import { notifications, processOutbox } from "@/server/worker";
 import { one, run, transaction } from "@/server/db";
 import { AppError, assert } from "@/server/errors";
@@ -97,8 +102,11 @@ async function handler(
     let body: unknown = {};
     if (!["GET", "HEAD"].includes(method)) {
       const raw = await req.text();
+      // A profile picture is the one payload that legitimately runs large.
+      const limit =
+        route === "profile/avatar" ? maxAvatarDataUrl + 4096 : 32768;
       assert(
-        raw.length <= 32768,
+        raw.length <= limit,
         "BODY_TOO_LARGE",
         "This request is too large.",
         413,
@@ -137,6 +145,7 @@ async function handler(
           googleEnabled: !!firebaseConfig(),
           firebase: firebaseConfig(),
           progress: user ? progress(user.id) : null,
+          avatarUrl: user ? avatarUrl(user.id) : "",
         };
       } else if (route === "spots") {
         const start = Number(
@@ -514,12 +523,24 @@ async function handler(
           );
         else if (route === "profile/decoration")
           result = saveDecoration(actor, decorationSchema.parse(body), key);
+        else if (route === "profile/avatar")
+          result = saveAvatar(
+            actor,
+            z.object({ avatar_url: avatarUrlSchema }).parse(body),
+            key,
+          );
         else if (route === "settings")
           result = account.settings(
             actor,
             z
               .object({
                 name: z.string().trim().min(2).max(60),
+                handle: z
+                  .string()
+                  .trim()
+                  .toLowerCase()
+                  .regex(handlePattern, handleHint)
+                  .optional(),
                 sharing: z.boolean(),
                 notify: z.boolean(),
               })

@@ -60,6 +60,8 @@ export const glyphs: Record<string, string> = {
 };
 export interface ProfileDecoration {
   border: string;
+  /** An uploaded profile picture as a data URL; empty means use the glyph. */
+  avatar_url: string;
   bio: string;
   theme: string;
   banner: string;
@@ -71,6 +73,7 @@ export interface ProfileDecoration {
 }
 export const defaultDecoration: ProfileDecoration = {
   border: "plain",
+  avatar_url: "",
   bio: "",
   theme: "forest",
   banner: "mountains",

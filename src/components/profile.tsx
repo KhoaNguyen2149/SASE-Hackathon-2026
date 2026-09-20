@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -9,8 +9,10 @@ import {
   CheckCircle2,
   Heart,
   LockKeyhole,
+  ImagePlus,
   LogOut,
   Mail,
+  Trash2,
   Shield,
   UserRound,
 } from "lucide-react";
@@ -18,6 +20,8 @@ import { useApp } from "./provider";
 import { AuthGate, Avatar, Badge, Modal, PageTitle } from "./ui";
 import { DecorationEditor } from "./profile-decoration";
 import { api, post } from "@/lib/client";
+import { handleHint, handlePattern, normalizeHandle } from "@/lib/handle";
+import { prepareAvatar } from "@/lib/avatar";
 export function Profile() {
   return (
     <>
@@ -44,12 +48,16 @@ function ProfileContent() {
   const { data, mutate, busy, refresh, toast } = useApp();
   const user = data!.user!;
   const [name, setName] = useState(user.name),
+    [handle, setHandle] = useState(user.handle),
     [sharing, setSharing] = useState(!!user.sharing),
     [notify, setNotify] = useState(!!user.notify),
     [remove, setRemove] = useState(false),
     [password, setPassword] = useState(""),
     [developmentLink, setDevelopmentLink] = useState("");
   const router = useRouter();
+  const handleValid = handlePattern.test(handle);
+  const saveSettings = (message: string) =>
+    mutate("settings", { name, handle, sharing, notify }, message);
   async function exportData() {
     try {
       const result = await api("account/export");
@@ -73,7 +81,8 @@ function ProfileContent() {
       <aside>
         <div className="card profile-identity">
           {data?.premium && <span className="premium-badge">Premium</span>}
-          <Avatar name={user.name} size="large" />
+          <Avatar name={user.name} size="large" src={data?.avatarUrl} />
+          <ProfilePicture />
           <h2>{user.name}</h2>
           <p>@{user.handle}</p>
           <Badge tone={user.verified ? "sage" : "apricot"}>
@@ -124,12 +133,36 @@ function ProfileContent() {
             />
           </label>
           <label className="field">
+            Your handle
+            <input
+              value={handle}
+              onChange={(e) => setHandle(normalizeHandle(e.target.value))}
+              minLength={3}
+              maxLength={24}
+              autoCapitalize="none"
+              spellCheck={false}
+              aria-invalid={!handleValid}
+            />
+            <small>
+              {handleValid
+                ? `Friends find your public profile at /u/${handle}. Changing it retires the old address.`
+                : handleHint}
+            </small>
+          </label>
+          <label className="field">
             Email address
             <input value={user.email} readOnly />
             <small>Your email is never part of your public profile.</small>
           </label>
+          <button
+            className="button"
+            disabled={busy || name.trim().length < 2 || !handleValid}
+            onClick={() => void saveSettings("The basics are saved.")}
+          >
+            Save the basics
+          </button>
           {!user.verified && (
-            <>
+            <div className="verify-actions">
               <button
                 className="button secondary"
                 disabled={busy}
@@ -168,7 +201,7 @@ function ProfileContent() {
                   <Link href={developmentLink}>Verify your email</Link>
                 </div>
               )}
-            </>
+            </div>
           )}
         </section>
         {user.verified === 1 && <DecorationEditor />}
@@ -209,14 +242,8 @@ function ProfileContent() {
           </p>
           <button
             className="button"
-            disabled={busy || name.trim().length < 2}
-            onClick={() =>
-              void mutate(
-                "settings",
-                { name, sharing, notify },
-                "Your preferences are saved.",
-              )
-            }
+            disabled={busy || name.trim().length < 2 || !handleValid}
+            onClick={() => void saveSettings("Your preferences are saved.")}
           >
             Save my preferences
           </button>
@@ -330,6 +357,69 @@ function ProfileContent() {
             </div>
           </form>
         </Modal>
+      )}
+    </div>
+  );
+}
+function ProfilePicture() {
+  const { data, mutate, busy, toast } = useApp();
+  const picker = useRef<HTMLInputElement>(null);
+  const [preparing, setPreparing] = useState(false);
+  const verified = data?.user?.verified === 1;
+  const current = data?.avatarUrl || "";
+  if (!verified)
+    return (
+      <p className="fine-print">Verify your email to add a profile picture.</p>
+    );
+  return (
+    <div className="picture-actions">
+      <input
+        ref={picker}
+        type="file"
+        accept="image/jpeg,image/png,image/webp"
+        className="visually-hidden"
+        onChange={async (e) => {
+          const file = e.target.files?.[0];
+          e.target.value = "";
+          if (!file) return;
+          setPreparing(true);
+          try {
+            const avatar_url = await prepareAvatar(file);
+            await mutate(
+              "profile/avatar",
+              { avatar_url },
+              "Your profile picture is saved.",
+            );
+          } catch (error) {
+            toast((error as Error).message);
+          } finally {
+            setPreparing(false);
+          }
+        }}
+      />
+      <button
+        className="button secondary small"
+        disabled={busy || preparing}
+        onClick={() => picker.current?.click()}
+      >
+        <ImagePlus size={16} />
+        {current ? "Change picture" : "Add a picture"}
+      </button>
+      {current && (
+        <button
+          className="text-button danger-text"
+          disabled={busy || preparing}
+          onClick={() =>
+            void mutate(
+              "profile/avatar",
+              { avatar_url: "" },
+              "Your profile picture is removed.",
+            )
+          }
+        >
+          <Trash2 size={15} />
+          Remove
+        </button>
       )}
     </div>
   );

@@ -12,6 +12,7 @@ type Row = {
   handle?: string;
   city?: string;
   avatar?: string;
+  avatar_url?: string;
   score: number;
   reviews: number;
   followers?: number;
@@ -113,7 +114,13 @@ export function Rankings() {
                     <small>{r.rank <= 3 ? "#" + r.rank : ""}</small>
                   </span>
                   <span className="rank-avatar" aria-hidden="true">
-                    {kind === "users" ? glyphs[r.avatar || "seedling"] : "📍"}
+                    {kind === "users" && r.avatar_url ? (
+                      <img src={r.avatar_url} alt="" decoding="async" />
+                    ) : kind === "users" ? (
+                      glyphs[r.avatar || "seedling"]
+                    ) : (
+                      "📍"
+                    )}
                   </span>
                   <span className="rank-person">
                     <strong>

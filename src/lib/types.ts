@@ -193,6 +193,8 @@ export interface Bootstrap {
     appId: string;
   } | null;
   progress?: import("./rewards").Progress | null;
+  /** The signed-in user's uploaded profile picture, or "" for initials. */
+  avatarUrl?: string;
 }
 
 export type DirectorySpot = Omit<
