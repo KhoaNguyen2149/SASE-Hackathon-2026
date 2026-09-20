@@ -38,6 +38,8 @@ export function migrateSocial(db: DatabaseSync) {
       INSERT OR IGNORE INTO first_reviews SELECT user_id,spot_id,created_at FROM reviews;
       CREATE INDEX IF NOT EXISTS reviews_period ON reviews(created_at,spot_id);
       CREATE INDEX IF NOT EXISTS follows_period ON first_follows(created_at,target_id);
+      CREATE TABLE IF NOT EXISTS spotify_accounts(user_id TEXT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE, spotify_id TEXT NOT NULL, display_name TEXT NOT NULL DEFAULT '', access_token TEXT NOT NULL, refresh_token TEXT NOT NULL, expires_at INTEGER NOT NULL, share INTEGER NOT NULL DEFAULT 1 CHECK(share IN (0,1)), connected_at INTEGER NOT NULL);
+      CREATE TABLE IF NOT EXISTS spotify_playing(user_id TEXT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE, track TEXT NOT NULL DEFAULT '', artist TEXT NOT NULL DEFAULT '', url TEXT NOT NULL DEFAULT '', playing INTEGER NOT NULL DEFAULT 0, fetched_at INTEGER NOT NULL);
       INSERT OR IGNORE INTO schema_migrations VALUES(3,unixepoch()*1000);
     `);
     add("profiles", "border", "TEXT NOT NULL DEFAULT 'plain'");

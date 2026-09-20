@@ -6,6 +6,7 @@ import {
   Check,
   ChevronRight,
   MapPin,
+  Music,
   Plus,
   Send,
   Shield,
@@ -244,6 +245,20 @@ function FriendContent() {
                   {f.spot_name}
                   <ChevronRight size={16} />
                 </Link>
+              )}
+              {f.listening && (
+                <a
+                  className="friend-listening"
+                  href={f.listening.url || "https://open.spotify.com"}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  <Music size={15} />
+                  <span>
+                    <strong>{f.listening.track}</strong>
+                    <small>{f.listening.artist}</small>
+                  </span>
+                </a>
               )}
               {f.can_hop ? (
                 <button

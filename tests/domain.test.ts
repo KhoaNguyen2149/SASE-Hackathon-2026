@@ -826,6 +826,8 @@ const { syncRewards, progress, buyCosmetic } =
 const { rankWindow, rankings } = await import("../src/server/rankings");
 const { saveDecoration, saveAvatar, avatarUrl } =
   await import("../src/server/profiles");
+const { friendNowPlaying, setSharing, disconnect, connection, startConnect } =
+  await import("../src/server/spotify");
 const { defaultDecoration } = await import("../src/lib/profile-style");
 const { publicProfile } = await import("../src/server/community");
 const { directions } = await import("../src/lib/directions");
@@ -1030,4 +1032,103 @@ test("a profile picture is stored only when its bytes match a real image", () =>
   assert.equal(avatarUrl(a.id), png);
   saveAvatar(a, { avatar_url: "" }, key());
   assert.equal(avatarUrl(a.id), "");
+});
+function connectSpotify(u: User, track = "Weightless", playing = 1) {
+  run(
+    "INSERT OR REPLACE INTO spotify_accounts(user_id,spotify_id,display_name,access_token,refresh_token,expires_at,share,connected_at) VALUES(?,?,?,?,?,?,1,?)",
+    u.id,
+    "sp_" + u.id,
+    u.name,
+    "sealed",
+    "sealed",
+    tick + 3600000,
+    tick,
+  );
+  run(
+    "INSERT OR REPLACE INTO spotify_playing(user_id,track,artist,url,playing,fetched_at) VALUES(?,?,?,?,?,?)",
+    u.id,
+    track,
+    "Marconi Union",
+    "https://open.spotify.com/track/x",
+    playing,
+    tick,
+  );
+}
+test("a friend's track is shown only to accepted friends who are still sharing", () => {
+  process.env.SPOTIFY_CLIENT_ID = "test-client";
+  process.env.SPOTIFY_CLIENT_SECRET = "test-secret-not-real";
+  try {
+    connectSpotify(b);
+    // Not friends yet.
+    assert.equal(friendNowPlaying(a.id, b.id), null);
+    friend();
+    assert.equal(friendNowPlaying(a.id, b.id)?.track, "Weightless");
+    // Never your own, and never a stranger's.
+    assert.equal(friendNowPlaying(b.id, b.id), null);
+    assert.equal(friendNowPlaying(c.id, b.id), null);
+    // A paused track is not "listening to".
+    run("UPDATE spotify_playing SET playing=0 WHERE user_id=?", b.id);
+    assert.equal(friendNowPlaying(a.id, b.id), null);
+    run("UPDATE spotify_playing SET playing=1 WHERE user_id=?", b.id);
+    // A stale cache row is dropped rather than shown as current.
+    run(
+      "UPDATE spotify_playing SET fetched_at=? WHERE user_id=?",
+      tick - 600000,
+      b.id,
+    );
+    assert.equal(friendNowPlaying(a.id, b.id), null);
+    run("UPDATE spotify_playing SET fetched_at=? WHERE user_id=?", tick, b.id);
+    assert.equal(friendNowPlaying(a.id, b.id)?.artist, "Marconi Union");
+    // Turning general sharing off also hides the track.
+    settings(b, { name: b.name, sharing: false, notify: false }, key());
+    assert.equal(friendNowPlaying(a.id, b.id), null);
+    settings(b, { name: b.name, sharing: true, notify: false }, key());
+    // Turning the music toggle off clears what was cached.
+    setSharing(b, false);
+    assert.equal(friendNowPlaying(a.id, b.id), null);
+    assert.equal(connection(b.id).share, false);
+    assert.equal(
+      one("SELECT 1 FROM spotify_playing WHERE user_id=?", b.id),
+      undefined,
+    );
+    // Reconnecting shares again, and disconnecting removes everything.
+    setSharing(b, true);
+    connectSpotify(b, "Nightswimming");
+    assert.equal(friendNowPlaying(a.id, b.id)?.track, "Nightswimming");
+    disconnect(b);
+    assert.equal(connection(b.id).connected, false);
+    assert.equal(friendNowPlaying(a.id, b.id), null);
+  } finally {
+    delete process.env.SPOTIFY_CLIENT_ID;
+    delete process.env.SPOTIFY_CLIENT_SECRET;
+  }
+});
+test("linking Spotify needs a verified account and a configured deployment", () => {
+  code(() => startConnect(a, "/profile"), "SPOTIFY_UNAVAILABLE");
+  process.env.SPOTIFY_CLIENT_ID = "test-client";
+  process.env.SPOTIFY_CLIENT_SECRET = "test-secret-not-real";
+  try {
+    run("UPDATE users SET verified=0 WHERE id=?", a.id);
+    const unverified = one<User>("SELECT * FROM users WHERE id=?", a.id)!;
+    code(() => startConnect(unverified, "/profile"), "VERIFY_EMAIL");
+    run("UPDATE users SET verified=1 WHERE id=?", a.id);
+    const started = startConnect(a, "//evil.example/steal");
+    assert.ok(
+      started.url.startsWith("https://accounts.spotify.com/authorize?"),
+    );
+    // Only the read scope is ever requested.
+    assert.ok(started.url.includes("scope=user-read-currently-playing"));
+    assert.ok(!started.url.includes("evil.example"));
+    // An off-site return path is refused and replaced with the profile.
+    assert.equal(
+      one<{ next_path: string }>(
+        "SELECT next_path FROM oauth_states WHERE link_user_id=?",
+        a.id,
+      )!.next_path,
+      "/profile",
+    );
+  } finally {
+    delete process.env.SPOTIFY_CLIENT_ID;
+    delete process.env.SPOTIFY_CLIENT_SECRET;
+  }
 });

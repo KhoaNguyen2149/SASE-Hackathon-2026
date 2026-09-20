@@ -11,6 +11,7 @@ import {
   requireVerified,
 } from "./shared";
 import { normalizeUser, ownAvailability, ownSession } from "./sessions";
+import { friendNowPlaying } from "./spotify";
 import type { Friend, Hop, StudySession, User } from "@/lib/types";
 export function projectFriend(
   viewerId: string,
@@ -84,6 +85,7 @@ export function projectFriend(
     base.status = "Available now";
     base.expires_at = a.expires_at;
   }
+  base.listening = friendNowPlaying(viewerId, targetId) || undefined;
   return base;
 }
 export function friendList(userId: string) {

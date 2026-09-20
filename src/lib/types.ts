@@ -145,6 +145,8 @@ export interface Friend {
   spot_id?: string;
   spot_name?: string;
   can_hop: boolean;
+  /** Present only when a friend connected Spotify and chose to share it. */
+  listening?: { track: string; artist: string; url: string };
 }
 export interface Conditions {
   state: "insufficient_data" | "conflicting_reports" | "recent_reports";
@@ -195,6 +197,8 @@ export interface Bootstrap {
   progress?: import("./rewards").Progress | null;
   /** The signed-in user's uploaded profile picture, or "" for initials. */
   avatarUrl?: string;
+  spotifyEnabled?: boolean;
+  spotify?: { connected: boolean; name: string; share: boolean } | null;
 }
 
 export type DirectorySpot = Omit<

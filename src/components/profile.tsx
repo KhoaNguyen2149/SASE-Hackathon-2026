@@ -1,7 +1,7 @@
 "use client";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   ArrowDownToLine,
   ArrowRight,
@@ -13,6 +13,7 @@ import {
   LogOut,
   RefreshCw,
   Mail,
+  Music,
   Trash2,
   Shield,
   UserRound,
@@ -235,6 +236,7 @@ function ProfileContent() {
             </div>
           )}
         </section>
+        {data?.spotifyEnabled && <SpotifyCard />}
         {user.verified === 1 && <DecorationEditor />}
         <section className="card padded">
           <h2>A little control over your privacy</h2>
@@ -453,5 +455,103 @@ function ProfilePicture() {
         </button>
       )}
     </div>
+  );
+}
+const spotifyNotes: Record<string, string> = {
+  connected: "Spotify is connected.",
+  cancelled: "Spotify linking was cancelled. Nothing changed.",
+  failed: "Spotify could not be linked. Try connecting again.",
+  unavailable: "Spotify is not connected to this DeskHop yet.",
+};
+function SpotifyCard() {
+  const { data, mutate, busy, toast } = useApp();
+  const spotify = data?.spotify;
+  const verified = data?.user?.verified === 1;
+  const params = useSearchParams(),
+    router = useRouter();
+  const note = params.get("spotify");
+  // The callback sends people back with an outcome; say it once, then tidy up.
+  useEffect(() => {
+    if (!note) return;
+    toast(spotifyNotes[note] || spotifyNotes.failed);
+    router.replace("/profile");
+  }, [note, toast, router]);
+  return (
+    <section className="card padded">
+      <h2>
+        <Music size={21} /> What you are listening to
+      </h2>
+      <p className="muted">
+        Connect Spotify and your accepted friends can see the track you have on
+        while you study. DeskHop only ever reads the current track; it never
+        controls playback.
+      </p>
+      {spotify?.connected ? (
+        <>
+          <label className="check-card">
+            <input
+              type="checkbox"
+              checked={spotify.share}
+              disabled={busy}
+              onChange={(e) =>
+                void mutate(
+                  "spotify/share",
+                  { share: e.target.checked },
+                  e.target.checked
+                    ? "Friends can see your track again."
+                    : "Your track is hidden and the last one is cleared.",
+                )
+              }
+            />
+            <span>
+              <strong>Share my current track with friends</strong>
+              <small>
+                Only accepted friends, and only while your general sharing is
+                on. Turning this off clears the track straight away.
+              </small>
+            </span>
+          </label>
+          <div className="button-row">
+            <span className="fine-print">
+              Connected{spotify.name ? ` as ${spotify.name}` : ""}.
+            </span>
+            <button
+              className="button secondary"
+              disabled={busy}
+              onClick={() =>
+                void mutate(
+                  "spotify/disconnect",
+                  {},
+                  "Spotify is disconnected.",
+                )
+              }
+            >
+              Disconnect Spotify
+            </button>
+          </div>
+        </>
+      ) : (
+        <button
+          className="button"
+          disabled={busy || !verified}
+          onClick={async () => {
+            try {
+              const { url } = await api<{ url: string }>(
+                "spotify/authorize?next=%2Fprofile",
+              );
+              window.location.href = url;
+            } catch (e) {
+              toast((e as Error).message);
+            }
+          }}
+        >
+          <Music size={17} />
+          Connect Spotify
+        </button>
+      )}
+      {!spotify?.connected && !verified && (
+        <p className="fine-print">Verify your email to connect Spotify.</p>
+      )}
+    </section>
   );
 }

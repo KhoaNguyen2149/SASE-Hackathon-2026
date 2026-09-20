@@ -30,6 +30,14 @@ import * as social from "@/server/social";
 import * as community from "@/server/community";
 import * as account from "@/server/account";
 import * as admin from "@/server/admin";
+import {
+  connection,
+  disconnect,
+  setSharing,
+  spotifyEnabled,
+  startConnect,
+  syncNowPlaying,
+} from "@/server/spotify";
 import { maxAvatarDataUrl } from "@/lib/avatar";
 import { handleHint, handlePattern } from "@/lib/handle";
 import { notifications, processOutbox } from "@/server/worker";
@@ -146,7 +154,12 @@ async function handler(
           firebase: firebaseConfig(),
           progress: user ? progress(user.id) : null,
           avatarUrl: user ? avatarUrl(user.id) : "",
+          spotifyEnabled: spotifyEnabled(),
+          spotify: user ? connection(user.id) : null,
         };
+        // Refreshing one's own track must not delay the page; the next poll
+        // picks up whatever this writes.
+        if (user) void syncNowPlaying(user.id);
       } else if (route === "spots") {
         const start = Number(
           req.nextUrl.searchParams.get("start") || Date.now(),
@@ -201,6 +214,11 @@ async function handler(
         result = rankings(query.period, query.kind, query.metric, user?.id);
       } else if (route === "profile/decoration")
         result = { decoration: decoration(needUser().id) };
+      else if (route === "spotify/authorize")
+        result = startConnect(
+          needUser(),
+          req.nextUrl.searchParams.get("next") || "/profile",
+        );
       else if (route === "bookings")
         result = { bookings: booking.bookings(needUser().id) };
       else if (route === "study/history")
@@ -523,6 +541,12 @@ async function handler(
           );
         else if (route === "profile/decoration")
           result = saveDecoration(actor, decorationSchema.parse(body), key);
+        else if (route === "spotify/disconnect") result = disconnect(actor);
+        else if (route === "spotify/share")
+          result = setSharing(
+            actor,
+            z.object({ share: z.boolean() }).parse(body).share,
+          );
         else if (route === "profile/avatar")
           result = saveAvatar(
             actor,
