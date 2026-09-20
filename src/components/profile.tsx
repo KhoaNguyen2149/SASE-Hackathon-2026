@@ -11,6 +11,7 @@ import {
   LockKeyhole,
   ImagePlus,
   LogOut,
+  RefreshCw,
   Mail,
   Trash2,
   Shield,
@@ -52,6 +53,7 @@ function ProfileContent() {
     [sharing, setSharing] = useState(!!user.sharing),
     [notify, setNotify] = useState(!!user.notify),
     [remove, setRemove] = useState(false),
+    [checking, setChecking] = useState(false),
     [password, setPassword] = useState(""),
     [developmentLink, setDevelopmentLink] = useState("");
   const router = useRouter();
@@ -191,9 +193,38 @@ function ProfileContent() {
                 Resend verification
               </button>
               {data?.firebase && (
-                <Link className="text-link" href="/login?next=%2Fprofile">
-                  Verified your email? Sign in again to refresh it.
-                </Link>
+                <>
+                  <button
+                    className="button secondary"
+                    disabled={busy || checking}
+                    onClick={async () => {
+                      setChecking(true);
+                      try {
+                        const { managedVerification } =
+                          await import("@/lib/firebase-client");
+                        await managedVerification(data.firebase!, false);
+                        const fresh = await refresh();
+                        toast(
+                          fresh?.user?.verified
+                            ? "Your email is verified. You're all set."
+                            : "Not verified yet. Open the link in your inbox, then check again.",
+                        );
+                      } catch {
+                        // The managed session is per browser session, so it is
+                        // often gone by the time the emailed link is opened.
+                        router.push("/login?next=%2Fprofile");
+                      } finally {
+                        setChecking(false);
+                      }
+                    }}
+                  >
+                    <RefreshCw size={17} />
+                    {checking ? "Checking…" : "I've verified my email"}
+                  </button>
+                  <Link className="text-link" href="/login?next=%2Fprofile">
+                    Not working? Sign in again to refresh it.
+                  </Link>
+                </>
               )}
               {developmentLink && (
                 <div className="development-mail">

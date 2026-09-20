@@ -13,7 +13,7 @@ import { api, ApiError, post } from "@/lib/client";
 import type { Bootstrap } from "@/lib/types";
 type Context = {
   data: Bootstrap | null;
-  refresh: () => Promise<void>;
+  refresh: () => Promise<Bootstrap | null>;
   version: number;
   now: number;
   toast: (message: string) => void;
@@ -48,15 +48,17 @@ export function Provider({ children }: { children: ReactNode }) {
     const generation = ++refreshGeneration.current;
     try {
       const result = await api<Bootstrap>("bootstrap");
-      if (generation !== refreshGeneration.current) return;
+      if (generation !== refreshGeneration.current) return null;
       offset.current = result.serverTime - Date.now();
       setData(result);
       setNow(result.serverTime);
       setError(null);
       setVersion((v) => v + 1);
+      return result;
     } catch (e) {
       if (generation === refreshGeneration.current)
         setError(e instanceof Error ? e.message : "Unable to connect.");
+      return null;
     }
   }, []);
   useEffect(() => {

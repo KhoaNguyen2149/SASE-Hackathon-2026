@@ -15,6 +15,7 @@ import {
   Heart,
   LogIn,
   MapPin,
+  Menu,
   MessageCircle,
   Settings,
   ShieldCheck,
@@ -33,11 +34,21 @@ const nav = [
   { href: "/friends", label: "Friends", icon: Users },
   { href: "/profile", label: "Profile", icon: UserRound },
 ];
+const collections = [
+  { href: "/saved", label: "Saved spots", icon: Heart },
+  { href: "/bookings", label: "My bookings", icon: CalendarDays },
+  { href: "/feed", label: "Following feed", icon: BookOpen },
+];
+const community = [
+  { href: "/rankings", label: "Rankings", icon: Trophy },
+  { href: "/premium", label: "DeskHop Premium", icon: Crown },
+];
 export function Shell({ children }: { children: ReactNode }) {
   const router = useRouter(),
     pathname = usePathname(),
     { data, now, mutate, busy, error } = useApp();
   const [notifications, setNotifications] = useState(false),
+    [menu, setMenu] = useState(false),
     [dismissed, setDismissed] = useState(false),
     [editEta, setEditEta] = useState(false),
     [eta, setEta] = useState(20);
@@ -84,43 +95,28 @@ export function Shell({ children }: { children: ReactNode }) {
         </nav>
         <div className="sidebar-divider" />
         <nav aria-label="Your collections">
-          <Link
-            className={`nav-link ${pathname === "/saved" ? "active" : ""}`}
-            href="/saved"
-          >
-            <Heart size={20} />
-            Saved spots
-          </Link>
-          <Link
-            className={`nav-link ${pathname === "/bookings" ? "active" : ""}`}
-            href="/bookings"
-          >
-            <CalendarDays size={20} />
-            My bookings
-          </Link>
-          <Link
-            className={`nav-link ${pathname === "/feed" ? "active" : ""}`}
-            href="/feed"
-          >
-            <BookOpen size={20} />
-            Following feed
-          </Link>
+          {collections.map(({ href, label, icon: Icon }) => (
+            <Link
+              className={`nav-link ${pathname === href ? "active" : ""}`}
+              href={href}
+              key={href}
+            >
+              <Icon size={20} />
+              {label}
+            </Link>
+          ))}
         </nav>
         <nav aria-label="Community and membership">
-          <Link
-            className={`nav-link ${pathname === "/rankings" ? "active" : ""}`}
-            href="/rankings"
-          >
-            <Trophy size={20} />
-            Rankings
-          </Link>
-          <Link
-            className={`nav-link ${pathname === "/premium" ? "active" : ""}`}
-            href="/premium"
-          >
-            <Crown size={20} />
-            {data?.premium ? "Your Premium" : "DeskHop Premium"}
-          </Link>
+          {community.map(({ href, label, icon: Icon }) => (
+            <Link
+              className={`nav-link ${pathname === href ? "active" : ""}`}
+              href={href}
+              key={href}
+            >
+              <Icon size={20} />
+              {href === "/premium" && data?.premium ? "Your Premium" : label}
+            </Link>
+          ))}
         </nav>
         <div className="sidebar-bottom">
           <div className="sidebar-note">
@@ -353,7 +349,44 @@ export function Shell({ children }: { children: ReactNode }) {
             <span>{label}</span>
           </Link>
         ))}
+        <button
+          className={menu ? "active" : ""}
+          aria-expanded={menu}
+          onClick={() => setMenu(true)}
+        >
+          <Menu size={21} />
+          <span>More</span>
+        </button>
       </nav>
+      {menu && (
+        <Modal title="Everywhere else" onClose={() => setMenu(false)}>
+          <div className="menu-sheet" onClick={() => setMenu(false)}>
+            {[
+              ...collections,
+              ...community,
+              ...(data?.user?.role === "admin"
+                ? [
+                    {
+                      href: "/admin",
+                      label: "Venue administration",
+                      icon: ShieldCheck,
+                    },
+                  ]
+                : []),
+            ].map(({ href, label, icon: Icon }) => (
+              <Link
+                className={pathname === href ? "active" : ""}
+                href={href}
+                key={href}
+              >
+                <Icon size={20} />
+                {href === "/premium" && data?.premium ? "Your Premium" : label}
+                <ChevronRight size={16} />
+              </Link>
+            ))}
+          </div>
+        </Modal>
+      )}
       {editEta && hop && (
         <Modal
           title="Update your arrival estimate"

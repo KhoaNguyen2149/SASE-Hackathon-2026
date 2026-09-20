@@ -429,27 +429,85 @@ test("statewide photo filtering, map selection, attribution and directions work"
   );
 });
 
-test("profile appearance persists publicly and membership stays unavailable without billing", async ({page,context,request}) => {
+test("profile appearance persists publicly and membership stays unavailable without billing", async ({
+  page,
+  context,
+  request,
+}) => {
   const user = await makeUser(context);
   try {
     await page.goto("/profile");
-    await page.getByLabel("About you", {exact:false}).fill("Library afternoons and mountain mornings.");
-    await page.getByRole("button",{name:"Save profile appearance"}).click();
-    await expect(page.getByRole("status")).toContainText("Your public corner is updated.");
+    await page
+      .getByLabel("About you", { exact: false })
+      .fill("Library afternoons and mountain mornings.");
+    await page.getByRole("button", { name: "Save profile appearance" }).click();
+    await expect(page.getByRole("status")).toContainText(
+      "Your public corner is updated.",
+    );
     const publicResponse = await request.get(`/api/profiles/${user.handle}`);
     expect(publicResponse.ok()).toBeTruthy();
     const publicData = (await publicResponse.json()).data;
-    expect(publicData.decoration.bio).toBe("Library afternoons and mountain mornings.");
+    expect(publicData.decoration.bio).toBe(
+      "Library afternoons and mountain mornings.",
+    );
     expect(publicData.progress.coins).toBeUndefined();
     await page.reload();
-    await expect(page.getByLabel("About you", {exact:false})).toHaveValue("Library afternoons and mountain mornings.");
-    await page.getByRole("link",{name:"Community rankings",exact:true}).click();
-    await page.getByRole("button",{name:"Community",exact:true}).click();
-    await page.getByRole("button",{name:"Today",exact:true}).click();
-    await expect(page.getByRole("button",{name:"Today",exact:true})).toHaveAttribute("aria-pressed","true");
+    await expect(page.getByLabel("About you", { exact: false })).toHaveValue(
+      "Library afternoons and mountain mornings.",
+    );
+    await page
+      .getByRole("link", { name: "Community rankings", exact: true })
+      .click();
+    await page.getByRole("button", { name: "Community", exact: true }).click();
+    await page.getByRole("button", { name: "Today", exact: true }).click();
+    await expect(
+      page.getByRole("button", { name: "Today", exact: true }),
+    ).toHaveAttribute("aria-pressed", "true");
     await page.goto("/premium");
-    await expect(page.getByRole("button",{name:"Premium checkout is not open yet"})).toBeDisabled();
-    await page.setViewportSize({width:390,height:844});
+    await expect(
+      page.getByRole("button", { name: "Premium checkout is not open yet" }),
+    ).toBeDisabled();
+    await page.setViewportSize({ width: 390, height: 844 });
     await noOverflow(page);
-  } finally { await removeUser(context); }
+  } finally {
+    await removeUser(context);
+  }
+});
+
+test("every destination is reachable from the mobile menu, and reset only appears when it does something", async ({
+  page,
+  context,
+}) => {
+  await makeUser(context, "Menu Tester");
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/discover");
+  // The bottom bar cannot hold every destination, so the rest live in a menu
+  // rather than at the bottom of a long scroll.
+  await page.locator(".mobile-nav > button").click();
+  const sheet = page.getByRole("dialog");
+  await expect(sheet).toBeVisible();
+  for (const label of [
+    "Saved spots",
+    "My bookings",
+    "Following feed",
+    "Rankings",
+  ])
+    await expect(sheet.getByRole("link", { name: label })).toBeVisible();
+  await noOverflow(page);
+  await sheet.getByRole("link", { name: "Saved spots" }).click();
+  await expect(page).toHaveURL(/\/saved$/);
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  // Nothing is filtered here, so resetting the search would be a no-op.
+  await expect(page.getByRole("button", { name: "Reset search" })).toHaveCount(
+    0,
+  );
+  await expect(page.getByRole("link", { name: "Explore spots" })).toBeVisible();
+  await page.goto("/discover?catalog=sample");
+  await page
+    .getByPlaceholder("A spot, a neighborhood")
+    .fill("no-such-venue-anywhere");
+  await expect(
+    page.getByRole("button", { name: "Reset search" }),
+  ).toBeVisible();
+  await removeUser(context);
 });

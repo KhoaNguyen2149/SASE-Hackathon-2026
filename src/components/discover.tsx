@@ -23,7 +23,7 @@ import { useApp, useResource } from "./provider";
 import { Empty, ErrorState, Loading, Modal, PageTitle } from "./ui";
 import { SpotCard } from "./spot-card";
 import { HeroArt } from "./hero-art";
-import type { DirectorySpot } from "@/lib/types";
+import type { DirectorySpot, Friend } from "@/lib/types";
 const SpotMap = dynamic(() => import("./map"), {
   ssr: false,
   loading: () => <Loading />,
@@ -57,7 +57,7 @@ export function Discover({ saved = false }: { saved?: boolean }) {
   const router = useRouter(),
     params = useSearchParams();
   const catalogMode = params.get("catalog") === "sample" ? "sample" : "real";
-  const { data: app, toast } = useApp();
+  const { data: app, toast, now } = useApp();
   const [query, setQuery] = useState(""),
     [city, setCity] = useState(""),
     [photosOnly, setPhotosOnly] = useState(false),
@@ -141,6 +141,20 @@ export function Discover({ saved = false }: { saved?: boolean }) {
     photosOnly,
   ]);
   const mappedSpots = useMemo(() => spots.filter((s) => s.mapped), [spots]);
+  // Friends appear at the venue they chose to share, never at a live position.
+  const social = useResource<{ friends: Friend[] }>(
+    app?.user && view === "map" ? "friends" : null,
+  );
+  const friendsHere = useMemo(
+    () =>
+      (social.data?.friends || []).filter(
+        (f) => f.spot_id && f.expires_at! > now,
+      ),
+    [social.data, now],
+  );
+  const friendsOffMap = friendsHere.filter(
+    (f) => !mappedSpots.some((s) => s.id === f.spot_id),
+  );
   const resultKey = JSON.stringify([
     query,
     category,
@@ -162,6 +176,14 @@ export function Discover({ saved = false }: { saved?: boolean }) {
   const activeCount = Object.entries(filters).filter(([key, value]) =>
     key === "group" ? Number(value) > 1 : !!value,
   ).length;
+  // Resetting only helps when something is actually narrowing the results.
+  const narrowed =
+    activeCount > 0 ||
+    category !== "all" ||
+    photosOnly ||
+    !!query.trim() ||
+    !!city ||
+    !!location;
   function locate() {
     if (!navigator.geolocation) {
       toast(
@@ -523,19 +545,21 @@ export function Discover({ saved = false }: { saved?: boolean }) {
           }
           action={
             <div className="button-row">
-              <button
-                className="button"
-                onClick={() => {
-                  setFilters(initial);
-                  setCategory("all");
-                  setQuery("");
-                  setLocation(null);
-                  setCity("");
-                  setPhotosOnly(false);
-                }}
-              >
-                Reset search
-              </button>
+              {narrowed && (
+                <button
+                  className="button"
+                  onClick={() => {
+                    setFilters(initial);
+                    setCategory("all");
+                    setQuery("");
+                    setLocation(null);
+                    setCity("");
+                    setPhotosOnly(false);
+                  }}
+                >
+                  Reset search
+                </button>
+              )}
               {location && radius < 25 && (
                 <button
                   className="button secondary"
@@ -545,7 +569,10 @@ export function Discover({ saved = false }: { saved?: boolean }) {
                 </button>
               )}
               {saved && (
-                <Link className="button secondary" href="/discover">
+                <Link
+                  className={`button ${narrowed ? "secondary" : ""}`}
+                  href="/discover"
+                >
                   Explore spots
                 </Link>
               )}
@@ -574,7 +601,15 @@ export function Discover({ saved = false }: { saved?: boolean }) {
               spots={mappedSpots}
               selected={selected}
               onSelect={setSelected}
+              friends={friendsHere}
             />
+            {friendsOffMap.length > 0 && (
+              <div className="map-address-note">
+                {friendsOffMap.length === 1
+                  ? `${friendsOffMap[0].name} is at ${friendsOffMap[0].spot_name}, which your filters exclude.`
+                  : `${friendsOffMap.length} friends are at venues your filters exclude.`}
+              </div>
+            )}
             {spots.some((s) => !s.mapped) && (
               <div className="map-address-note">
                 Address-only venues are listed alongside the map. Pins and
