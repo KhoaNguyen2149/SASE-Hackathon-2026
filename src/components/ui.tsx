@@ -45,16 +45,20 @@ export function Empty({
   title,
   children,
   action,
+  level = 2,
 }: {
   icon?: ReactNode;
   title: string;
   children: ReactNode;
   action?: ReactNode;
+  /** Heading level, so an empty state never skips one below its page title. */
+  level?: 2 | 3;
 }) {
+  const Heading = level === 3 ? "h3" : "h2";
   return (
     <div className="empty-state">
       <div className="empty-icon">{icon || <MapPin size={28} />}</div>
-      <h3>{title}</h3>
+      <Heading>{title}</Heading>
       <p>{children}</p>
       {action}
     </div>

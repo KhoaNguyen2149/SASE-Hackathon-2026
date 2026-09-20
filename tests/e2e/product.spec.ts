@@ -553,3 +553,35 @@ test("the friends-only filter narrows the map and list to venues friends are sha
   await a.close();
   await b.close();
 });
+
+test("keyboard focus is always visible and disabled controls stay readable", async ({
+  page,
+}) => {
+  await page.goto("/discover?catalog=sample");
+  await expect(
+    page.getByRole("heading", { name: "Aspen Reading Room" }),
+  ).toBeVisible();
+  // Every tab stop needs a ring; an invisible one strands keyboard users.
+  for (let i = 0; i < 8; i++) {
+    await page.keyboard.press("Tab");
+    const ring = await page.evaluate(() => {
+      const el = document.activeElement;
+      if (!el || el === document.body) return null;
+      const style = getComputedStyle(el);
+      return {
+        width: parseFloat(style.outlineWidth),
+        style: style.outlineStyle,
+      };
+    });
+    if (!ring) continue;
+    expect(ring.style).not.toBe("none");
+    expect(ring.width).toBeGreaterThanOrEqual(2);
+  }
+  // A filled button faded to half opacity drops to about 1:1 on this page.
+  await page.goto("/premium");
+  const disabled = await page.evaluate(() => {
+    const el = [...document.querySelectorAll("button")].find((b) => b.disabled);
+    return el ? getComputedStyle(el).opacity : null;
+  });
+  if (disabled !== null) expect(Number(disabled)).toBeGreaterThan(0.9);
+});

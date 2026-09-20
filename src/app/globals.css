@@ -26,6 +26,16 @@ button:disabled {
   cursor: not-allowed;
   opacity: 0.5;
 }
+/* Fading a filled button to half opacity drops it near 1:1 against the page.
+   Disabled still has to be read, so it gets its own accessible pairing. */
+.button:disabled,
+.button.secondary:disabled,
+.button.danger:disabled {
+  opacity: 1;
+  background: #e3e8dc;
+  border-color: #74806e;
+  color: #3f4d42;
+}
 button,
 input,
 select,
@@ -84,6 +94,43 @@ select {
 ::selection {
   background: #e8c59a;
   color: #24342d;
+}
+/* Keyboard focus must be obvious on every interactive thing. The ring sits
+   outside the element, so it reads against the page on light and dark fills
+   alike, and :focus-visible keeps it off pointer clicks. */
+:focus-visible {
+  outline: 3px solid #1f4736;
+  outline-offset: 2px;
+  border-radius: 5px;
+}
+.search-box:focus-within,
+.field input:focus-visible,
+.field select:focus-visible,
+.field textarea:focus-visible {
+  outline: 3px solid #1f4736;
+  outline-offset: 1px;
+}
+/* The bottom bar sits on its own surface, so the ring tucks inside it. */
+.mobile-nav > a:focus-visible,
+.mobile-nav > button:focus-visible {
+  outline-offset: -4px;
+}
+@media (prefers-contrast: more) {
+  :focus-visible {
+    outline-width: 4px;
+  }
+  .button,
+  .card,
+  .field input,
+  .field select,
+  .field textarea {
+    border-color: #1f4736;
+  }
+  .muted,
+  .fine-print,
+  .field small {
+    color: #3c483f;
+  }
 }
 .skip-link {
   position: fixed;
@@ -649,8 +696,8 @@ select {
   transform: rotate(-7deg);
   display: inline-block;
   position: absolute;
-  bottom: 10px;
-  left: 38px;
+  bottom: -6px;
+  left: 0;
   background: #f9f7ef;
   padding: 6px 12px;
   color: #5f6b63;
@@ -1412,6 +1459,7 @@ select {
   line-height: 1.7;
 }
 .fine-print {
+  max-width: 78ch;
   font-size: 12px !important;
   color: #5f6b63;
   line-height: 1.85 !important;
@@ -1460,6 +1508,7 @@ select {
   color: #5f6b63;
   margin-bottom: 15px;
 }
+.empty-state h2,
 .empty-state h3 {
   font-size: 20px;
   margin: 0 0 10px;
@@ -4201,11 +4250,11 @@ select {
   font-size: 12px;
 }
 .nav-caption {
-  font-size: 10px;
+  font-size: 12px;
   letter-spacing: 1px;
 }
 .campus small {
-  font-size: 10px;
+  font-size: 12px;
 }
 .topbar-tagline {
   font-size: 13px;
@@ -4215,10 +4264,10 @@ select {
   max-width: 460px;
 }
 .hero-eyebrow {
-  font-size: 10px;
+  font-size: 12px;
 }
 .eyebrow {
-  font-size: 11px;
+  font-size: 12px;
 }
 .button,
 .button.small,
@@ -4241,7 +4290,7 @@ select {
   font-size: 13px;
 }
 .intent > span {
-  font-size: 11px;
+  font-size: 12px;
 }
 .intent-label {
   font-size: 12px;
@@ -5505,12 +5554,12 @@ select {
   color: #395648;
 }
 .venue-photo-placeholder small {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 400;
   max-width: 240px;
 }
 .photo-credit {
-  font-size: 10px;
+  font-size: 11px;
   line-height: 1.5;
   padding: 6px 14px;
   margin: 0;
