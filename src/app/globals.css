@@ -832,6 +832,8 @@ select {
   align-items: center;
   gap: 14px;
   flex-shrink: 0;
+  flex-wrap: wrap;
+  justify-content: flex-end;
 }
 .sort-label {
   display: flex;
@@ -853,6 +855,17 @@ select {
   position: absolute;
   right: 0;
   pointer-events: none;
+}
+.friends-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  white-space: nowrap;
+}
+.friends-toggle.selected {
+  background: #e5ecdf;
+  border-color: #8ba37f;
+  color: #2c4a34;
 }
 .view-toggle {
   display: flex;
@@ -3225,11 +3238,16 @@ select {
   }
   .results-heading {
     margin-top: 23px;
+    flex-wrap: wrap;
   }
   .results-heading h2 {
     font-size: 14px;
     max-width: 245px;
     gap: 7px;
+  }
+  .result-controls {
+    flex-shrink: 1;
+    min-width: 0;
   }
   .results-heading p {
     font-size: 12px;

@@ -61,6 +61,7 @@ export function Discover({ saved = false }: { saved?: boolean }) {
   const [query, setQuery] = useState(""),
     [city, setCity] = useState(""),
     [photosOnly, setPhotosOnly] = useState(false),
+    [friendsOnly, setFriendsOnly] = useState(false),
     [pageLimit, setPageLimit] = useState({ key: "", count: 48 }),
     [category, setCategory] = useState("all"),
     [filters, setFilters] = useState<Filters>(initial),
@@ -77,6 +78,21 @@ export function Discover({ saved = false }: { saved?: boolean }) {
     [smart, setSmart] = useState(false),
     [smartText, setSmartText] = useState(""),
     [smartExplanation, setSmartExplanation] = useState("");
+  // Friends appear at the venue they chose to share, never at a live position.
+  const social = useResource<{ friends: Friend[] }>(
+    app?.user ? "friends" : null,
+  );
+  const friendsHere = useMemo(
+    () =>
+      (social.data?.friends || []).filter(
+        (f) => f.spot_id && f.expires_at! > now,
+      ),
+    [social.data, now],
+  );
+  const friendSpots = useMemo(
+    () => new Set(friendsHere.map((f) => f.spot_id!)),
+    [friendsHere],
+  );
   const { data, error, loading } = useResource<{ spots: DirectorySpot[] }>(
     `spots?duration=${duration}`,
   );
@@ -89,6 +105,7 @@ export function Discover({ saved = false }: { saved?: boolean }) {
           (category === "all" || category === s.category) &&
           (!city || s.city === city) &&
           (!photosOnly || !!s.photo_url) &&
+          (!friendsOnly || friendSpots.has(s.id)) &&
           (!query ||
             `${s.name} ${s.description} ${s.address} ${s.category}`
               .toLowerCase()
@@ -139,19 +156,10 @@ export function Discover({ saved = false }: { saved?: boolean }) {
     catalogMode,
     city,
     photosOnly,
+    friendsOnly,
+    friendSpots,
   ]);
   const mappedSpots = useMemo(() => spots.filter((s) => s.mapped), [spots]);
-  // Friends appear at the venue they chose to share, never at a live position.
-  const social = useResource<{ friends: Friend[] }>(
-    app?.user && view === "map" ? "friends" : null,
-  );
-  const friendsHere = useMemo(
-    () =>
-      (social.data?.friends || []).filter(
-        (f) => f.spot_id && f.expires_at! > now,
-      ),
-    [social.data, now],
-  );
   const friendsOffMap = friendsHere.filter(
     (f) => !mappedSpots.some((s) => s.id === f.spot_id),
   );
@@ -165,6 +173,7 @@ export function Discover({ saved = false }: { saved?: boolean }) {
     catalogMode,
     city,
     photosOnly,
+    friendsOnly,
   ]);
   const shown = pageLimit.key === resultKey ? pageLimit.count : 48;
   const visibleSpots = spots.slice(0, shown);
@@ -181,6 +190,7 @@ export function Discover({ saved = false }: { saved?: boolean }) {
     activeCount > 0 ||
     category !== "all" ||
     photosOnly ||
+    friendsOnly ||
     !!query.trim() ||
     !!city ||
     !!location;
@@ -459,8 +469,9 @@ export function Discover({ saved = false }: { saved?: boolean }) {
           );
         })}
       </div>
-      {activeCount > 0 && (
+      {(activeCount > 0 || friendsOnly) && (
         <div className="active-filters">
+          {friendsOnly && <span>Where friends are</span>}
           {filters.quiet && <span>Quiet setting</span>}
           {filters.power && <span>Outlets</span>}
           {filters.coffee && <span>Coffee on site</span>}
@@ -470,7 +481,13 @@ export function Discover({ saved = false }: { saved?: boolean }) {
           {filters.group > 1 && (
             <span>Tables for {filters.group} · availability unknown</span>
           )}
-          <button className="text-button" onClick={() => setFilters(initial)}>
+          <button
+            className="text-button"
+            onClick={() => {
+              setFilters(initial);
+              setFriendsOnly(false);
+            }}
+          >
             Clear filters <X size={12} />
           </button>
         </div>
@@ -500,6 +517,19 @@ export function Discover({ saved = false }: { saved?: boolean }) {
             </select>
             <ChevronDown size={14} />
           </label>
+          {app?.user && (
+            <button
+              className={`button secondary small friends-toggle ${friendsOnly ? "selected" : ""}`}
+              aria-pressed={friendsOnly}
+              onClick={() => setFriendsOnly((v) => !v)}
+            >
+              <Users size={15} />
+              Friends only
+              {friendsHere.length > 0 && (
+                <span className="count-badge">{friendsHere.length}</span>
+              )}
+            </button>
+          )}
           <div className="view-toggle" aria-label="Results view">
             <button
               aria-label="Grid view"
@@ -539,9 +569,11 @@ export function Discover({ saved = false }: { saved?: boolean }) {
       ) : spots.length === 0 ? (
         <Empty
           title={
-            saved
-              ? "Your next favorite is out there"
-              : "Let’s open up the possibilities"
+            friendsOnly && friendsHere.length === 0
+              ? "No friends are sharing a venue yet"
+              : saved
+                ? "Your next favorite is out there"
+                : "Let’s open up the possibilities"
           }
           action={
             <div className="button-row">
@@ -555,6 +587,7 @@ export function Discover({ saved = false }: { saved?: boolean }) {
                     setLocation(null);
                     setCity("");
                     setPhotosOnly(false);
+                    setFriendsOnly(false);
                   }}
                 >
                   Reset search
@@ -579,9 +612,11 @@ export function Discover({ saved = false }: { saved?: boolean }) {
             </div>
           }
         >
-          {saved
-            ? "Tap the heart on a spot to keep it for later."
-            : "No spots match all of those preferences. Try fewer filters or a wider area."}
+          {friendsOnly && friendsHere.length === 0
+            ? "Friends appear here while they study somewhere and choose to share the venue."
+            : saved
+              ? "Tap the heart on a spot to keep it for later."
+              : "No spots match all of those preferences. Try fewer filters or a wider area."}
         </Empty>
       ) : view === "grid" ? (
         <div className="spot-grid">

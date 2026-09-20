@@ -511,3 +511,45 @@ test("every destination is reachable from the mobile menu, and reset only appear
   ).toBeVisible();
   await removeUser(context);
 });
+
+test("the friends-only filter narrows the map and list to venues friends are sharing", async ({
+  browser,
+}) => {
+  const a = await browser.newContext(),
+    b = await browser.newContext();
+  await makeUser(a, "Alex Filter");
+  const maya = await makeUser(b, "Maya Filter");
+  const alex = (await (await a.request.get(base + "/api/bootstrap")).json())
+    .data.user;
+  await command(a.request, "friends", { action: "request", target: maya.id });
+  await command(b.request, "friends", { action: "accept", target: alex.id });
+  const page = await a.newPage();
+  await page.goto("/discover?catalog=sample");
+  const toggle = page.getByRole("button", { name: /Friends only/ });
+  // Nobody is sharing yet, so the filter explains itself instead of a blank.
+  await toggle.click();
+  await expect(
+    page.getByRole("heading", { name: "No friends are sharing a venue yet" }),
+  ).toBeVisible();
+  await command(b.request, "study", {
+    spot_id: "aspen-reading-room",
+    minutes: 50,
+    visibility: "friends_status_and_venue",
+    share_completion: false,
+  });
+  await page.reload();
+  await expect(
+    page.getByRole("heading", { name: "Aspen Reading Room" }),
+  ).toBeVisible();
+  await toggle.click();
+  await expect(page.getByText("Where friends are")).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Aspen Reading Room" }),
+  ).toBeVisible();
+  // A spot with no friend at it is filtered out.
+  await expect(
+    page.getByRole("heading", { name: "The Study Hall" }),
+  ).toHaveCount(0);
+  await a.close();
+  await b.close();
+});
